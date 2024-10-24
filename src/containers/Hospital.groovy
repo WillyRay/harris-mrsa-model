@@ -8,6 +8,8 @@ class Hospital {
     ArrayList<Patient> patients;
     ArrayList<HealthCareWorker> hcws;
     int bedCount
+    ArrayList<Patient> inIcu;
+    ArrayList<Patient> notInIcu;
    
     
      public Hospital(int bedCount) {
@@ -16,6 +18,7 @@ class Hospital {
 	this.hcws = new ArrayList<HealthCareWorker>()
 	this.bedCount = bedCount
     }
+    
     
     
     public createAndAdmitPatient() {
