@@ -1,6 +1,8 @@
 package processes
 
 import org.apache.commons.math3.distribution.ExponentialDistribution;
+import org.apache.commons.math3.distribution.RealDistribution
+
 import agents.Agent
 import repast.simphony.engine.schedule.ISchedulableAction;
 import repast.simphony.engine.schedule.ISchedule;
@@ -13,7 +15,7 @@ abstract class Process extends Agent{
 	ISchedule schedule
 	double meanIntraEventTime
 	double nextEventTime
-	ExponentialDistribution distro
+	RealDistribution distro
 	ISchedulableAction nextAction
 	
 	
@@ -25,12 +27,18 @@ abstract class Process extends Agent{
 			distro = new ExponentialDistribution(intra_event_time)
 		}
 	}
-
-	abstract def start()
 	
-	abstract def fire()
+	Process(){
+	    this.schedule = repast.simphony.engine.environment.RunEnvironment.getInstance().getCurrentSchedule();
+	}
+	
 
-	abstract def stop() 
+
+	abstract void start()
+	
+	abstract void fire()
+
+	abstract void stop() 
 
 	double getNextEventTime(){
 		double currTime = schedule.getTickCount()

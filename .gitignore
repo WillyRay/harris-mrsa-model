@@ -27,3 +27,7 @@ ext/libtool
 /bin/
 /debug.log
 /velocity.log
+
+
+/debug.*
+debug.log

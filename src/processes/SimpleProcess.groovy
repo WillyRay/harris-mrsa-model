@@ -12,7 +12,7 @@ class SimpleProcess extends Process {
 	}
 
 	@Override
-	public Object start() {
+	public void start() {
 		def eventTime = this.getNextEventTime()
 		ScheduleParameters params= ScheduleParameters.createOneTime(eventTime)
 		schedule.schedule(params, this, "fire")
@@ -21,7 +21,7 @@ class SimpleProcess extends Process {
 	}
 
 	@Override
-	public Object fire() {
+	public void fire() {
 		System.out.print("firing!")
 		if (!this.stop) {
 			start()
@@ -29,7 +29,7 @@ class SimpleProcess extends Process {
 	}
 
 	@Override
-	public Object stop() {
+	public void stop() {
 				this.stop = true
 	}
 }

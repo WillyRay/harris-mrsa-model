@@ -1,0 +1,4 @@
+package processes
+
+class Death {
+}
