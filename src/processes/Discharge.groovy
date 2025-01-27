@@ -20,13 +20,22 @@ class Discharge extends Process{
 
 
 
-    Discharge(double scale, double shape, Hospital hosp, Patient p) {
+
+    Discharge(double scale, double shape, Hospital hosp) {
 	super()
 	this.target = hosp
 	this.meanIntraEventTime = 0
 	this.shape = shape
 	this.scale = scale
 	dist = new LogNormalDistribution(scale, shape)
+	
+    }
+    
+    public scheduleDischarge(Patient p) {
+	nextEventTime = getNextEventTime()
+	schedParams = ScheduleParameters.createOneTime(nextEventTime)
+	nextAction = schedule.schedule(schedParams, target, "dischargePatient", p)
+	
     }
 
     @Override

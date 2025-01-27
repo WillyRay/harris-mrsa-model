@@ -1,15 +1,18 @@
 package processes
 
 import org.apache.commons.math3.distribution.LogNormalDistribution
-
+import agents.Patient
 import containers.Hospital
 import repast.simphony.engine.schedule.ISchedulableAction
 import repast.simphony.engine.schedule.Schedule
 import repast.simphony.engine.schedule.ScheduleParameters
 
-class Admission extends Process{
+class Transfer extends Process{
     Hospital target
+    Patient patient
+    LogNormalDistribution dist
     ScheduleParameters schedParams
+    double shape,scale
     double nextEventTime
     ISchedulableAction nextAction
     static int totalAdmissionsAttempted
@@ -17,46 +20,50 @@ class Admission extends Process{
 
 
 
-    Admission(double meanIet, Hospital hosp) {
-	super(meanIet)
+
+    Transfer(double scale, double shape, Hospital hosp) {
+	super()
 	this.target = hosp
+	this.meanIntraEventTime = 0
+	this.shape = shape
+	this.scale = scale
+	dist = new LogNormalDistribution(scale, shape)
+	
+    }
+    
+    public scheduleTransfer(Patient p) {
+	nextEventTime = getNextEventTime()
+	schedParams = ScheduleParameters.createOneTime(nextEventTime)
+	nextAction = schedule.schedule(schedParams, target, "transferPatient", p)
 	
     }
 
     @Override
     public void start() {
 
-	if (totalAdmissionsAttempted > 9999) {
-	    return
-	}
-	nextEventTime = this.getNextEventTime();
-	schedParams = ScheduleParameters.createOneTime(nextEventTime)
-	nextAction = schedule.schedule(schedParams, this, "fire")
+	
     }
 
     @Override
     public void fire() {
-	totalAdmissionsAttempted++
-	this.target.createAndAdmitPatient();
-	start()
+
     }
 
     @Override
     public void stop() {
-	// TODO Auto-generated method stub
-	return null;
+	
     }
 
     double getNextEventTime(){
 	double currTime = schedule.getTickCount()
-	double elapse = distro.sample()
+	double elapse = dist.sample()
 	return Math.max(currTime+elapse,0)
     }
     
     void testDistribution() {
 	def totalVal = 0
 	for (def i=0; i<1000; i++) {
-	    def value = distro.sample()
+	    def value = dist.sample()
 	    totalVal += value
 	    System.out.println(value)  
 	}

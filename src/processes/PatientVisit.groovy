@@ -2,33 +2,32 @@ package processes
 
 import org.apache.commons.math3.distribution.LogNormalDistribution
 
+import agents.HealthCareWorker
 import containers.Hospital
 import repast.simphony.engine.schedule.ISchedulableAction
 import repast.simphony.engine.schedule.Schedule
 import repast.simphony.engine.schedule.ScheduleParameters
 
-class Admission extends Process{
+class PatientVisit extends Process{
     Hospital target
     ScheduleParameters schedParams
     double nextEventTime
     ISchedulableAction nextAction
-    static int totalAdmissionsAttempted
+    HealthCareWorker hcw
     double meanObservedIntraEventTime
 
 
 
-    Admission(double meanIet, Hospital hosp) {
+    PatientVisit(double meanIet, Hospital hosp, HealthCareWorker hcw) {
 	super(meanIet)
 	this.target = hosp
-	
+	this.hcw = hcw
     }
 
     @Override
     public void start() {
 
-	if (totalAdmissionsAttempted > 9999) {
-	    return
-	}
+	
 	nextEventTime = this.getNextEventTime();
 	schedParams = ScheduleParameters.createOneTime(nextEventTime)
 	nextAction = schedule.schedule(schedParams, this, "fire")
@@ -36,8 +35,7 @@ class Admission extends Process{
 
     @Override
     public void fire() {
-	totalAdmissionsAttempted++
-	this.target.createAndAdmitPatient();
+	hcw.makeAVisit();
 	start()
     }
 

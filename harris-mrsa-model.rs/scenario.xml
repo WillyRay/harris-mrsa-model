@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Scenario simphonyVersion="2.11.0">
-<repast.simphony.dataLoader.engine.ClassNameDataLoaderAction context="harris-mrsa-model" file="repast.simphony.dataLoader.engine.ClassNameDataLoaderAction_0.xml" />
+<repast.simphony.action.data_set context="harris-mrsa-model" file="repast.simphony.action.data_set_0.xml" />
+<repast.simphony.dataLoader.engine.ClassNameDataLoaderAction context="harris-mrsa-model" file="repast.simphony.dataLoader.engine.ClassNameDataLoaderAction_1.xml" />
+<repast.simphony.action.time_series_chart context="harris-mrsa-model" file="repast.simphony.action.time_series_chart_2.xml" />
 </Scenario>
