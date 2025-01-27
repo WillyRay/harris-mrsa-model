@@ -42,10 +42,10 @@ public class Builder implements ContextBuilder<Object> {
 	private double icuTransferShape = 0.5;
 	private double icuTransferScale = 1.0;
 	private double needsRt = 0.1;
-	private double neesPt = 0.1;
+	private double needsPt = 0.1;
 	private double needsOt = 0.1;
 	private double needsRtIcu = 0.1;
-	private double neesPtIcu = 0.1;
+	private double needsPtIcu = 0.1;
 	private double needsOtIcu = 0.1;
 	
 	//Staffing parameters
@@ -239,12 +239,12 @@ public class Builder implements ContextBuilder<Object> {
 	    this.needsRt = needsRt;
 	}
 
-	public double getNeesPt() {
-	    return neesPt;
+	public double getNeedsPt() {
+	    return needsPt;
 	}
 
 	public void setNeesPt(double neesPt) {
-	    this.neesPt = neesPt;
+	    this.needsPt = neesPt;
 	}
 
 	public double getNeedsOt() {
@@ -263,12 +263,12 @@ public class Builder implements ContextBuilder<Object> {
 	    this.needsRtIcu = needsRtIcu;
 	}
 
-	public double getNeesPtIcu() {
-	    return neesPtIcu;
+	public double getNeedsPtIcu() {
+	    return needsPtIcu;
 	}
 
 	public void setNeesPtIcu(double neesPtIcu) {
-	    this.neesPtIcu = neesPtIcu;
+	    this.needsPtIcu = neesPtIcu;
 	}
 
 	public double getNeedsOtIcu() {
