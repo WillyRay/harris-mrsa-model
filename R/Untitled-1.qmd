@@ -1,0 +1,19 @@
+---
+title: "Untitled"
+format: pdf
+---
+# Icu-vs-Ward-Admits
+
+<!-- Content for ICU vs Ward Admits page -->
+
+---
+
+# LOS
+
+<!-- Content for LOS page -->
+
+---
+
+# transfer-vs-not
+
+<!-- Content for transfer vs not page -->

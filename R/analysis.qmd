@@ -1,0 +1,105 @@
+---
+title: "Analysis Report"
+format: 
+  html: default
+  pdf: 
+    toc: false
+page-navigation: true
+---
+
+
+
+```{r}
+library(ggplot2)
+# Read discharged_patients.txt into a dataframe
+
+df <- read.table("discharged_patients.txt", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
+total_rows <- nrow(df)
+total_icu_admit <- sum(tolower(df$icuAdmit) == 'true')
+total_ward_admit <- total_rows - total_icu_admit
+df$los <- df$dischargeTime - df$admitTime
+
+```
+
+## Total Patients: `{r} total_rows`
+### ICU admit %: `{r} total_icu_admit/total_rows`
+ 
+
+## Icu-vs-Ward-Admits
+
+```{r}
+# Pie chart of ICU vs Ward admits
+
+admit_counts <- data.frame(
+  type = c("ICU", "Ward"),
+  count = c(total_icu_admit, total_ward_admit)
+)
+ggplot(admit_counts, aes(x = "", y = count, fill = type)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar(theta = "y") +
+  labs(title = "ICU vs Ward Admits", x = NULL, y = NULL, fill = "Admit Type") +
+  theme_void()
+```
+
+
+
+---
+
+## LOS
+
+```{r}
+icu_patients <- df[tolower(df$icuAdmit) == "true", ]
+ward_patients <- df[tolower(df$icuAdmit) == "false", ]
+q3 <- quantile(df$los, 0.75, na.rm = TRUE)
+ggplot(df, aes(x = los, color = icuAdmit)) +
+  geom_histogram(binwidth = 0.1) +
+  xlim(NA, q3)
+
+summary(icu_patients$los)
+summary(ward_patients$los)
+
+
+total_ward_discharge <- sum(tolower(df$dischargeLocation) == 'ward')
+total_icu_discharge <- sum(tolower(df$dischargeLocation) == 'icu')
+total_transfers_ward <- sum(df$transferTime != -1 & tolower(df$admitLocation) == 'icu')
+total_transfers_icu <- sum(df$transferTime != -1 & tolower(df$admitLocation) == 'ward')
+
+```
+## Summary Stats
+
+ key   | value   
+-----|-----
+Total Admissions | `{r} total_rows`
+Total to Ward| `{r} total_ward_admit`
+Total to ICU| `{r} total_icu_admit`
+% icu/total|     `{r} total_icu_admit/total_rows`
+total discharges from ward| `{r} total_ward_discharge`
+total dicharges from icu| `{r} total_icu_discharge`
+total transfers to ward| `{r} total_transfers_ward`
+total transfers to icu| `{r} total_transfers_icu`
+fraction of admissions with transfer to WARD| `{r} total_transfers_ward/total_rows`
+fraction of admissions with transfer to ICU| `{r} total_transfers_icu/total_rows`
+Average LOS| `{r} mean(df$los)` 
+average LOS for ICU-admits| `{r} mean(icu_patients$los)` 
+average length of stay on ICU (transfer or otherwise)| tbd 
+ 
+
+---
+
+
+
+<!-- Content for transfer vs not page -->
+
+# HCW Visits
+## Summary Stats:
+key | val 
+-----|-----
+Average total visits per hcw/shift | val
+average daily visits per patient per hcw per shift | val
+average distinct patients visited per shift per hcw type | val
+average time between visits per HCW by type | val
+average number of HCW visits per day/patient (total/{type}) |val
+average time between visist by HCW per patient | val
+average distinct hcw visits per day by patient | val
+
