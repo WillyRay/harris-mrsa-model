@@ -1,0 +1,39 @@
+<repast.simphony.data2.engine.DataSetDescriptor simphonyVersion="2.11.0">
+  <name>LOS</name>
+  <type>NON_AGGREGATE</type>
+  <sourceType>agents.DischargedPatient</sourceType>
+  <inclTick>true</inclTick>
+  <inclBatchRun>false</inclBatchRun>
+  <inclRandomSeed>false</inclRandomSeed>
+  <scheduleParams>
+    <start>1.0</start>
+    <interval>1.0</interval>
+    <priority>-Infinity</priority>
+    <pType>LAST</pType>
+    <duration>-1.0</duration>
+    <frequency>REPEAT</frequency>
+    <hashCode>-229842313</hashCode>
+  </scheduleParams>
+  <atEnd>false</atEnd>
+  <methodDataSources class="linked-hash-map">
+    <entry>
+      <string>Icu</string>
+      <repast.simphony.data2.engine.MethodDataSourceDefinition>
+        <id>Icu</id>
+        <className>agents.DischargedPatient</className>
+        <methodName>isIcu</methodName>
+      </repast.simphony.data2.engine.MethodDataSourceDefinition>
+    </entry>
+    <entry>
+      <string>Los</string>
+      <repast.simphony.data2.engine.MethodDataSourceDefinition>
+        <id>Los</id>
+        <className>agents.DischargedPatient</className>
+        <methodName>getLos</methodName>
+      </repast.simphony.data2.engine.MethodDataSourceDefinition>
+    </entry>
+  </methodDataSources>
+  <countSources class="linked-hash-map"/>
+  <customNADataSources class="linked-hash-map"/>
+  <customAggDataSources class="linked-hash-map"/>
+</repast.simphony.data2.engine.DataSetDescriptor>

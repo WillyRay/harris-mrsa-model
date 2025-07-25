@@ -1,4 +1,4 @@
-package processes
+package processes;
 
-class Death {
+public class Death {
 }

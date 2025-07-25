@@ -1,9 +1,9 @@
-package agents
+package agents;
 
-import containers.Hospital
-import agents.Patient
+import containers.Hospital;
+import agents.Patient;
 
-class HealthCareWorker extends Agent {
+public class HealthCareWorker extends Agent {
 
     private boolean contaminated;
     public HcwType TYPE;
@@ -17,13 +17,18 @@ class HealthCareWorker extends Agent {
     
     
     public void makeAVisit() {
-	Patient p = (Patient)hospital.getRandomObjects(agents.Patient, 1).first()
-	System.out.println(this.toString() +  " Visits Patient " + p.getAgentId())
+	if (hospital.getPatientCount() > 0) {
+	    Object po = hospital.getRandomObjects(agents.Patient.class, 1).iterator().next();
+	    
+	    Patient p = (Patient) po;
+		  //   Patient p = (Patient) ((Object) hospital.getRandomObjects(agents.Patient.class, 1)).first();
+	    //System.out.println(this.toString() +  " Visits Patient " + p.getAgentId());
+	}
     }
     
     @Override
     public String toString() {
-	return "Agent " + this.getAgentId() + " " +  TYPE.toString()
+	return "Agent " + this.getAgentId() + " " +  TYPE.toString();
 
     }
 }

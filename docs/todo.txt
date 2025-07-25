@@ -1,4 +1,5 @@
 Next tasks
 
 Transfer from ICu to ward
-Visits
+Fix nurse / doctors need assigments on shiftly or patiently basis.
+

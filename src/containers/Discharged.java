@@ -1,7 +1,9 @@
-package containers
+package containers;
 
-import agents.Agent
+import java.util.ArrayList;
+
+import agents.Agent;
 
 class Discharged {
-    ArrayList<Agent> patients
+    ArrayList<Agent> patients;
 }

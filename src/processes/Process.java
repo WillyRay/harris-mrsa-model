@@ -1,9 +1,9 @@
-package processes
+package processes;
 
 import org.apache.commons.math3.distribution.ExponentialDistribution;
-import org.apache.commons.math3.distribution.RealDistribution
+import org.apache.commons.math3.distribution.RealDistribution;
 
-import agents.Agent
+import agents.Agent;
 import repast.simphony.engine.schedule.ISchedulableAction;
 import repast.simphony.engine.schedule.ISchedule;
 import java.lang.Math;
@@ -12,19 +12,20 @@ import java.lang.Math;
 abstract class Process extends Agent{
 
 
-	ISchedule schedule
-	double meanIntraEventTime
-	double nextEventTime
-	RealDistribution distro
-	ISchedulableAction nextAction
+	protected ISchedule schedule;
+	protected double meanIntraEventTime;
+	double nextEventTime;
+	protected RealDistribution distro;
+	ISchedulableAction nextAction;
 	
 	
 
 	Process(double intra_event_time){
+	    	super();
 		if (intra_event_time > 0) {
 			schedule = repast.simphony.engine.environment.RunEnvironment.getInstance().getCurrentSchedule();
-			meanIntraEventTime = intra_event_time
-			distro = new ExponentialDistribution(intra_event_time)
+			meanIntraEventTime = intra_event_time;
+			distro = new ExponentialDistribution(intra_event_time);
 		}
 	}
 	
@@ -34,15 +35,15 @@ abstract class Process extends Agent{
 	
 
 
-	abstract void start()
+	abstract void start();
 	
-	abstract void fire()
+	abstract void fire();
 
-	abstract void stop() 
+	abstract void stop() ;
 
 	double getNextEventTime(){
-		double currTime = schedule.getTickCount()
-		double elapse = distro.sample()
-		return Math.max(currTime+elapse,0)
+		double currTime = schedule.getTickCount();
+		double elapse = distro.sample();
+		return Math.max(currTime+elapse,0);
 	}
 }

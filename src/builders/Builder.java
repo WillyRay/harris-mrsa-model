@@ -10,16 +10,27 @@ import repast.simphony.dataLoader.ContextBuilder;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ISchedule;
 import repast.simphony.engine.schedule.ScheduledMethod;
+import agents.DischargedPatient;
 import agents.HcwType;
 import agents.HealthCareWorker;
 import agents.Patient;
+import agents.Therapist;
 import utils.Chooser;
 import utils.TimeUtils;
 
+import java.io.IOException;
+import java.util.logging.FileHandler;
+import java.util.logging.Level; 
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter; 
 
+import org.apache.commons.math3.distribution.LogNormalDistribution;
+
+//	newDistro = new LogNormalDistribution(0.7032373, 0.9986254)
 
 public class Builder implements ContextBuilder<Object> {
 	
+    	
 	ISchedule schedule ;
 	Hospital hospital;
 	Admission admissionProcess;
@@ -29,37 +40,40 @@ public class Builder implements ContextBuilder<Object> {
 	private double defaultDouble = 0.1;
 	private int defaultInt = 1;
 	
+//	newDistro = new LogNormalDistribution(0.7032373, 0.9986254)
 	// adt parameters
-	private int hospitalCapacity = 90;
-	private int icuCapacity = 20;
+	private int hospitalCapacity = 85;
+	private int icuCapacity = 15;
 	private double admissionsRate = 0.2; //mean intra_event time
 	private double dischargeShape = 1.3;
 	private double dischargeScale = 1.0;
-	private double icuDischargeShape = 1.3;
-	private double icuDischargeScale = 1.0;
-	private double icuAdmitProbability = 0.1;
-	private double generalMortality = 0.1;
+	private double icuDischargeShape = 0.70332373;
+	private double icuDischargeScale = 0.9986254;
+	private double icuAdmitProbability = .15;
+	private double generalMortality = defaultDouble;
+	private double icuTransferProbability = 0.1; //probability of transfer to ICU
 	private double icuTransferShape = 0.5;
 	private double icuTransferScale = 1.0;
-	private double needsRt = 0.1;
-	private double needsPt = 0.1;
-	private double needsOt = 0.1;
-	private double needsRtIcu = 0.1;
-	private double needsPtIcu = 0.1;
-	private double needsOtIcu = 0.1;
+	private double needsRt = defaultDouble;
+	private double needsPt = defaultDouble;
+	private double needsOt = defaultDouble;
+	private double needsRtIcu = defaultDouble;
+	private double needsPtIcu = defaultDouble;
+	private double needsOtIcu = defaultDouble;
+
 	
 	//Staffing parameters
 	//respiratory therapists, physical therapists, occupational therapists, nurses, physicians
 	// ratios of these types to 
-	private double rtsPerPatient = 0.1;
-	private double ptsPerPatient = 0.1;
-	private double otsPerPatient = 0.1;
+	private double rtsPerPatient = defaultDouble;
+	private double ptsPerPatient = defaultDouble;
+	private double otsPerPatient = defaultDouble;
 	private double nursesPerPatient = 0.3;
 	private double physiciansPerPatient = 0.2;
 	
 	//transmission parameters
-	private double cleanPtColonizeddHcwColonizationProb = 0.1;
-	private double contaminedPtCleanHcwColonizationProb = 0.1;
+	private double cleanPtColonizeddHcwColonizationProb = defaultDouble;
+	private double contaminedPtCleanHcwColonizationProb = defaultDouble;
 	
 	//review on 1/27:
 	// review ADT model, HCW staffing ratios, contact stuff
@@ -70,17 +84,41 @@ public class Builder implements ContextBuilder<Object> {
 	    // System.out.println(hospital.getPatientCount());
 	
 	  }	
-	 
+	   @ScheduledMethod(start = 0.5, interval = 0.5)
+	    public void perShiftOperations() {
+		//hospital.resetTherapyNeeds();
+	   } 
+	    
 	 @ScheduledMethod(start =365, interval = 1)
 	  public void endOfRun() {
+	     //print out discharged patients to a file
+	     try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter("discharged_patients.txt", true))) {
+	         writer.write("agentId,admitTime,dischargeTime,icuAdmit,transferTime,admitLocation,dischargeLocation");
+	         writer.newLine();
+	         for (DischargedPatient dp : hospital.getDischargedPatients()) {
+	              writer.write(dp.toString());
+	              writer.newLine();
+	          }
+	          
+	     } catch (IOException e) {
+	         e.printStackTrace();
+	     }
 	     RunEnvironment.getInstance().endRun();
 	
 	  }	
+	 
+	
 
 	
 
 	@Override
 	public Context<Object> build(Context<Object> context) {
+	    	
+	   
+		    
+	
+	   
+	    
 		schedule = repast.simphony.engine.environment.RunEnvironment.getInstance().getCurrentSchedule();
 		
 		//WRR: Create a hospital with 90 beds.
@@ -91,14 +129,59 @@ public class Builder implements ContextBuilder<Object> {
 		TimeUtils.getSchedule().schedule(this);
 		
 		
+		buildHealthCareWorkers();
 		HealthCareWorker doc1 = new HealthCareWorker(HcwType.DOCTOR, hospital);
 		PatientVisit pv = new PatientVisit(0.2, hospital, doc1);
 		doc1.setAttribute("visit_process", pv);
 		pv.start();
 		
 		
+		
+		
 		return context;
 	
+	}
+	
+	private void buildHealthCareWorkers() {
+	   
+	    
+	    for (int i = 0; i<hospitalCapacity*physiciansPerPatient; i++) {
+		HealthCareWorker doc1 = new HealthCareWorker(HcwType.DOCTOR, hospital);
+		PatientVisit pv = new PatientVisit(0.2, hospital, doc1);
+		doc1.setAttribute("visit_process", pv);
+		pv.start();
+	    }
+	    
+	    for (int i = 0; i<hospitalCapacity*nursesPerPatient; i++) {
+		HealthCareWorker nurse = new HealthCareWorker(HcwType.NURSE, hospital);
+		PatientVisit pv = new PatientVisit(0.2, hospital, nurse);
+		nurse.setAttribute("visit_process", pv);
+		pv.start();
+	    }
+	    
+	    for (int i = 0; i<hospitalCapacity*rtsPerPatient; i++) {
+		Therapist hcw  = new Therapist(HcwType.RT, hospital);
+		hcw.setNeedsArray(hospital.patientsNeedingRt);
+		PatientVisit pv = new PatientVisit(0.2, hospital, hcw);
+		hcw.setAttribute("visit_process", pv);
+		pv.start();
+	    }
+	    
+	    for (int i = 0; i<hospitalCapacity*ptsPerPatient; i++) {
+		Therapist hcw  = new Therapist(HcwType.PT, hospital);
+		hcw.setNeedsArray(hospital.patientsNeedingPt);
+		PatientVisit pv = new PatientVisit(0.2, hospital, hcw);
+		hcw.setAttribute("visit_process", pv);
+		pv.start();
+	    }
+	    
+	    for (int i = 0; i<hospitalCapacity*otsPerPatient; i++) {
+		Therapist hcw  = new Therapist(HcwType.OT, hospital);
+		hcw.setNeedsArray(hospital.patientsNeedingOt);
+		PatientVisit pv = new PatientVisit(0.2, hospital, hcw);
+		hcw.setAttribute("visit_process", pv);
+		pv.start();
+	    }
 	}
 	
 
