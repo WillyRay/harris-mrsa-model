@@ -1,5 +1,6 @@
 ---
 title: "Analysis Report"
+warning: false
 format: 
   html: default
   pdf: 
@@ -25,7 +26,6 @@ df$los <- df$dischargeTime - df$admitTime
 ## Total Patients: `{r} total_rows`
 ### ICU admit %: `{r} total_icu_admit/total_rows`
  
-
 ## Icu-vs-Ward-Admits
 
 ```{r}
@@ -54,8 +54,11 @@ ward_patients <- df[tolower(df$icuAdmit) == "false", ]
 q3 <- quantile(df$los, 0.75, na.rm = TRUE)
 ggplot(df, aes(x = los, color = icuAdmit)) +
   geom_histogram(binwidth = 0.1) +
-  xlim(NA, q3)
-
+  xlim(NA, q3*4) +
+    geom_vline(aes(xintercept=mean(icu_patients$los)),
+            color="red", linetype="dashed", size=1) +
+            geom_vline(aes(xintercept=mean(ward_patients$los)),
+            color="blue", linetype="dashed", size=1)
 summary(icu_patients$los)
 summary(ward_patients$los)
 
@@ -66,7 +69,8 @@ total_transfers_ward <- sum(df$transferTime != -1 & tolower(df$admitLocation) ==
 total_transfers_icu <- sum(df$transferTime != -1 & tolower(df$admitLocation) == 'ward')
 
 ```
-## Summary Stats
+\newpage
+## ADT Summary Stats
 
  key   | value   
 -----|-----
@@ -90,16 +94,32 @@ average length of stay on ICU (transfer or otherwise)| tbd
 
 
 <!-- Content for transfer vs not page -->
+\newpage
+::: {.callout-important}
+Future Analysis to be completed:
 
-# HCW Visits
-## Summary Stats:
-key | val 
------|-----
-Average total visits per hcw/shift | val
-average daily visits per patient per hcw per shift | val
-average distinct patients visited per shift per hcw type | val
-average time between visits per HCW by type | val
-average number of HCW visits per day/patient (total/{type}) |val
-average time between visist by HCW per patient | val
-average distinct hcw visits per day by patient | val
+## HCW Visits
 
+* Average total visits per hcw/shift 
+    + doctor
+    + nurse
+    + rt
+    + pt
+    + ot
+* average daily visits per patient per hcw per shift
+    + total and broken out by hcw type
+* average distinct patients visited per shift
+    + broken out by hcw type
+* average time between visits per HCW by type
+    + verify (intravisit time + duration of visit from Granular Model)
+        - doctors mean = gamma(0.52, 90.7) + gamma(5.5, 1.2)
+        - nurses mean = gamma(0.54, 55.7) + gamma(5.5, 1.2)
+        - therapists mean = gamma(0.52, 61.7) + gamma(3.0, 1.8)
+* average number of HCW visits per day/patient (total/{type}) val
+* average time between visist by HCW per patient 
+* average distinct hcw visits per day by patient 
+
+## Disease
+* TBD
+
+:::

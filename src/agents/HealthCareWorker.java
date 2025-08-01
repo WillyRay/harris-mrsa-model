@@ -1,6 +1,7 @@
 package agents;
 
 import containers.Hospital;
+import utils.TimeUtils;
 import agents.Patient;
 
 public class HealthCareWorker extends Agent {
@@ -21,8 +22,7 @@ public class HealthCareWorker extends Agent {
 	    Object po = hospital.getRandomObjects(agents.Patient.class, 1).iterator().next();
 	    
 	    Patient p = (Patient) po;
-		  //   Patient p = (Patient) ((Object) hospital.getRandomObjects(agents.Patient.class, 1)).first();
-	    //System.out.println(this.toString() +  " Visits Patient " + p.getAgentId());
+	    hospital.visitData.append(this.getAgentId() + "," + this.TYPE.toString() + "," + p.getAgentId() + "," + p.getCurrentLocation() + "," + TimeUtils.getSchedule().getTickCount() + "\n");
 	}
     }
     
@@ -31,4 +31,6 @@ public class HealthCareWorker extends Agent {
 	return "Agent " + this.getAgentId() + " " +  TYPE.toString();
 
     }
+    
+    
 }

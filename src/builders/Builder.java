@@ -6,10 +6,12 @@ import containers.Hospital;
 import processes.Admission;
 import processes.PatientVisit;
 import repast.simphony.context.Context;
+import repast.simphony.context.space.graph.NetworkBuilder;
 import repast.simphony.dataLoader.ContextBuilder;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ISchedule;
 import repast.simphony.engine.schedule.ScheduledMethod;
+import repast.simphony.space.graph.Network;
 import agents.DischargedPatient;
 import agents.HcwType;
 import agents.HealthCareWorker;
@@ -19,6 +21,7 @@ import utils.Chooser;
 import utils.TimeUtils;
 
 import java.io.IOException;
+import java.nio.channels.NetworkChannel;
 import java.util.logging.FileHandler;
 import java.util.logging.Level; 
 import java.util.logging.Logger;
@@ -40,15 +43,14 @@ public class Builder implements ContextBuilder<Object> {
 	private double defaultDouble = 0.1;
 	private int defaultInt = 1;
 	
-//	newDistro = new LogNormalDistribution(0.7032373, 0.9986254)
 	// adt parameters
 	private int hospitalCapacity = 85;
 	private int icuCapacity = 15;
 	private double admissionsRate = 0.2; //mean intra_event time
-	private double dischargeShape = 1.3;
-	private double dischargeScale = 1.0;
-	private double icuDischargeShape = 0.70332373;
-	private double icuDischargeScale = 0.9986254;
+	private double dischargeShape = 1.253;
+	private double dischargeScale = 0.768;
+	private double icuDischargeShape = 0.916;
+	private double icuDischargeScale = 0.820;
 	private double icuAdmitProbability = .15;
 	private double generalMortality = defaultDouble;
 	private double icuTransferProbability = 0.1; //probability of transfer to ICU
@@ -60,6 +62,7 @@ public class Builder implements ContextBuilder<Object> {
 	private double needsRtIcu = defaultDouble;
 	private double needsPtIcu = defaultDouble;
 	private double needsOtIcu = defaultDouble;
+	
 
 	
 	//Staffing parameters
@@ -81,16 +84,24 @@ public class Builder implements ContextBuilder<Object> {
 	
 	 @ScheduledMethod(start = 1.0, interval = 1)
 	  public void daily() {
-	    // System.out.println(hospital.getPatientCount());
 	
 	  }	
 	   @ScheduledMethod(start = 0.5, interval = 0.5)
 	    public void perShiftOperations() {
-		//hospital.resetTherapyNeeds();
 	   } 
 	    
 	 @ScheduledMethod(start =365, interval = 1)
 	  public void endOfRun() {
+	     
+	     if (true) {
+	         writeSingleRunFiles();
+	     }
+	     RunEnvironment.getInstance().endRun();
+	
+	  }
+	 
+	 public void writeSingleRunFiles() {
+	     
 	     //print out discharged patients to a file
 	     try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter("discharged_patients.txt", true))) {
 	         writer.write("agentId,admitTime,dischargeTime,icuAdmit,transferTime,admitLocation,dischargeLocation");
@@ -103,9 +114,15 @@ public class Builder implements ContextBuilder<Object> {
 	     } catch (IOException e) {
 	         e.printStackTrace();
 	     }
-	     RunEnvironment.getInstance().endRun();
-	
-	  }	
+	     
+	     //print the hospital.visitData StringBuffer to a file
+	     try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter("visit_data.txt", true))) {
+	         writer.write(hospital.visitData.toString());
+	         writer.newLine();
+	     } catch (IOException e) {
+	         e.printStackTrace();
+	     }
+	 }
 	 
 	
 
@@ -136,6 +153,10 @@ public class Builder implements ContextBuilder<Object> {
 		pv.start();
 		
 		
+		NetworkBuilder networkBuilder = new NetworkBuilder("icu", context, true);
+		Network icuNetwork = networkBuilder.buildNetwork();
+		networkBuilder = new NetworkBuilder("wards", context, true);
+		Network wardsNetwork = networkBuilder.buildNetwork();
 		
 		
 		return context;

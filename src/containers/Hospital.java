@@ -35,9 +35,15 @@ public class Hospital extends DefaultContext<Object>{
     public ArrayList<Patient> patientsNeedingOt;
     public ArrayList<Patient> patientsNeedingRt;
     public ArrayList<Patient> patientsNeedingPt;
+    
+    public StringBuffer visitData;
 
     public Hospital(Builder builder, int bedCount, int icuBedCount) {
 	super();
+	
+	this.visitData = new StringBuffer();
+	visitData.append("hcwId,hcwType,patientId,patientLocation,visitTime");
+	
 	
 	this.dischargedPatients = new ArrayList<DischargedPatient>();
 	this.patients = new ArrayList<Patient>();
