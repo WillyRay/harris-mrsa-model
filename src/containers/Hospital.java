@@ -42,7 +42,7 @@ public class Hospital extends DefaultContext<Object>{
 	super();
 	
 	this.visitData = new StringBuffer();
-	visitData.append("hcwId,hcwType,patientId,patientLocation,visitTime");
+	visitData.append("hcwId,hcwType,patientId,patientLocation,visitTime\n");
 	
 	
 	this.dischargedPatients = new ArrayList<DischargedPatient>();
@@ -100,8 +100,16 @@ public class Hospital extends DefaultContext<Object>{
 		p.setNeedsPt(Chooser.randomTrue(builder.getNeedsPt()));
 		p.setAdmitTime(TimeUtils.getSchedule().getTickCount());   
 	    }
-	   // System.out.print("admission," + p.agentId + ",")
-	    //System.out.println(", " + p.printAttributes())
+	  
+	    if (p.isNeedsOt()) {
+		this.patientsNeedingOt.add(p);
+	    }
+	    if (p.isNeedsPt()) {
+		this.patientsNeedingPt.add(p);
+	    }
+	    if (p.isNeedsRt())	 {
+		this.patientsNeedingRt.add(p);
+	    }
 	}
     }
 
@@ -157,14 +165,14 @@ public class Hospital extends DefaultContext<Object>{
 	}
 	
 	for (Patient p: this.patients) {
-	    if ((boolean)p.getAttribute("needs_ot")) {
+	    if (p.isNeedsOt()) {
 		this.patientsNeedingOt.add(p);
 	    }
-	    if ((boolean)p.getAttribute("needs_pt")) {
+	    if (p.isNeedsPt()) {
 		this.patientsNeedingPt.add(p);
 	    }
-	    if ((boolean)p.getAttribute("needs_rt")) {
-		this.patientsNeedingOt.add(p);
+	    if (p.isNeedsRt())	 {
+		this.patientsNeedingRt.add(p);
 	    }
 	}
     }

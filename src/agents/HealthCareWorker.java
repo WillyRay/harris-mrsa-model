@@ -20,7 +20,6 @@ public class HealthCareWorker extends Agent {
     public void makeAVisit() {
 	if (hospital.getPatientCount() > 0) {
 	    Object po = hospital.getRandomObjects(agents.Patient.class, 1).iterator().next();
-	    
 	    Patient p = (Patient) po;
 	    hospital.visitData.append(this.getAgentId() + "," + this.TYPE.toString() + "," + p.getAgentId() + "," + p.getCurrentLocation() + "," + TimeUtils.getSchedule().getTickCount() + "\n");
 	}
@@ -30,6 +29,16 @@ public class HealthCareWorker extends Agent {
     public String toString() {
 	return "Agent " + this.getAgentId() + " " +  TYPE.toString();
 
+    }
+
+
+    public HcwType getTYPE() {
+        return TYPE;
+    }
+
+
+    public void setTYPE(HcwType tYPE) {
+        TYPE = tYPE;
     }
     
     

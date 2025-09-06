@@ -2,6 +2,7 @@ package processes;
 
 import org.apache.commons.math3.distribution.LogNormalDistribution;
 
+import agents.HcwType;
 import agents.HealthCareWorker;
 import containers.Hospital;
 import repast.simphony.engine.schedule.ISchedulableAction;
@@ -15,6 +16,7 @@ public class PatientVisit extends Process{
     ISchedulableAction nextAction;
     HealthCareWorker hcw;
     double meanObservedIntraEventTime;
+    HcwType hcwType;
 
 
 
@@ -22,6 +24,7 @@ public class PatientVisit extends Process{
 	super(meanIet);
 	this.target = hosp;
 	this.hcw = hcw;
+	this.hcwType = hcw.getTYPE();
     }
 
     @Override

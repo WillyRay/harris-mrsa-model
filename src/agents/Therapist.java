@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import containers.Hospital;
 import utils.Chooser;
+import utils.TimeUtils;
 
 public class Therapist extends HealthCareWorker {
 
@@ -13,7 +14,7 @@ public class Therapist extends HealthCareWorker {
     
     public Therapist(HcwType hcwtype, Hospital hospital) {
 	super(hcwtype, hospital);
-	therapistType = hcwtype;
+	this.therapistType = hcwtype;
     }
     
     public void setNeedsArray(ArrayList<Patient> needs) {
@@ -24,8 +25,8 @@ public class Therapist extends HealthCareWorker {
 	if (needsArray.size() > 0) {
 	   Patient p = (Patient)Chooser.chooseOne(needsArray);
 	   needsArray.remove(p);
-	   System.out.println(this.toString() +  " Visits Patient " + p.getAgentId());
+	   String row = this.getAgentId() + "," + this.TYPE.toString() + "," + p.getAgentId() + "," + p.getCurrentLocation() + "," + TimeUtils.getSchedule().getTickCount() + '\n';
+	   hospital.visitData.append(row);
 	}
     }
-
 }

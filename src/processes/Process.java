@@ -46,4 +46,12 @@ abstract class Process extends Agent{
 		double elapse = distro.sample();
 		return Math.max(currTime+elapse,0);
 	}
+
+	public RealDistribution getDistro() {
+	    return distro;
+	}
+
+	public void setDistro(RealDistribution distro) {
+	    this.distro = distro;
+	}
 }

@@ -25,8 +25,9 @@ import java.nio.channels.NetworkChannel;
 import java.util.logging.FileHandler;
 import java.util.logging.Level; 
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter; 
+import java.util.logging.SimpleFormatter;
 
+import org.apache.commons.math3.distribution.GammaDistribution;
 import org.apache.commons.math3.distribution.LogNormalDistribution;
 
 //	newDistro = new LogNormalDistribution(0.7032373, 0.9986254)
@@ -62,6 +63,8 @@ public class Builder implements ContextBuilder<Object> {
 	private double needsRtIcu = defaultDouble;
 	private double needsPtIcu = defaultDouble;
 	private double needsOtIcu = defaultDouble;
+	private double nurseIntraVisitShape = 0.585;
+	private double nurseIntraVisitScale = 48.22;
 	
 
 	
@@ -84,7 +87,7 @@ public class Builder implements ContextBuilder<Object> {
 	
 	 @ScheduledMethod(start = 1.0, interval = 1)
 	  public void daily() {
-	
+	     hospital.resetTherapyNeeds();
 	  }	
 	   @ScheduledMethod(start = 0.5, interval = 0.5)
 	    public void perShiftOperations() {
@@ -103,7 +106,7 @@ public class Builder implements ContextBuilder<Object> {
 	 public void writeSingleRunFiles() {
 	     
 	     //print out discharged patients to a file
-	     try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter("discharged_patients.txt", true))) {
+	     try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter("discharged_patients.txt", false))) {
 	         writer.write("agentId,admitTime,dischargeTime,icuAdmit,transferTime,admitLocation,dischargeLocation");
 	         writer.newLine();
 	         for (DischargedPatient dp : hospital.getDischargedPatients()) {
@@ -116,7 +119,7 @@ public class Builder implements ContextBuilder<Object> {
 	     }
 	     
 	     //print the hospital.visitData StringBuffer to a file
-	     try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter("visit_data.txt", true))) {
+	     try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter("visit_data.txt", false))) {
 	         writer.write(hospital.visitData.toString());
 	         writer.newLine();
 	     } catch (IOException e) {
@@ -168,14 +171,15 @@ public class Builder implements ContextBuilder<Object> {
 	    
 	    for (int i = 0; i<hospitalCapacity*physiciansPerPatient; i++) {
 		HealthCareWorker doc1 = new HealthCareWorker(HcwType.DOCTOR, hospital);
-		PatientVisit pv = new PatientVisit(0.2, hospital, doc1);
+		PatientVisit pv = new PatientVisit(0.02, hospital, doc1);
 		doc1.setAttribute("visit_process", pv);
 		pv.start();
 	    }
 	    
 	    for (int i = 0; i<hospitalCapacity*nursesPerPatient; i++) {
 		HealthCareWorker nurse = new HealthCareWorker(HcwType.NURSE, hospital);
-		PatientVisit pv = new PatientVisit(0.2, hospital, nurse);
+		PatientVisit pv = new PatientVisit(0.02, hospital, nurse);
+		pv.setDistro(new GammaDistribution(nurseIntraVisitShape, nurseIntraVisitScale));
 		nurse.setAttribute("visit_process", pv);
 		pv.start();
 	    }
@@ -183,15 +187,15 @@ public class Builder implements ContextBuilder<Object> {
 	    for (int i = 0; i<hospitalCapacity*rtsPerPatient; i++) {
 		Therapist hcw  = new Therapist(HcwType.RT, hospital);
 		hcw.setNeedsArray(hospital.patientsNeedingRt);
-		PatientVisit pv = new PatientVisit(0.2, hospital, hcw);
+		PatientVisit pv = new PatientVisit(0.1, hospital, hcw);
 		hcw.setAttribute("visit_process", pv);
-		pv.start();
+		pv.start();	
 	    }
 	    
 	    for (int i = 0; i<hospitalCapacity*ptsPerPatient; i++) {
 		Therapist hcw  = new Therapist(HcwType.PT, hospital);
 		hcw.setNeedsArray(hospital.patientsNeedingPt);
-		PatientVisit pv = new PatientVisit(0.2, hospital, hcw);
+		PatientVisit pv = new PatientVisit(0.1, hospital, hcw);
 		hcw.setAttribute("visit_process", pv);
 		pv.start();
 	    }
@@ -199,7 +203,7 @@ public class Builder implements ContextBuilder<Object> {
 	    for (int i = 0; i<hospitalCapacity*otsPerPatient; i++) {
 		Therapist hcw  = new Therapist(HcwType.OT, hospital);
 		hcw.setNeedsArray(hospital.patientsNeedingOt);
-		PatientVisit pv = new PatientVisit(0.2, hospital, hcw);
+		PatientVisit pv = new PatientVisit(0.02, hospital, hcw);
 		hcw.setAttribute("visit_process", pv);
 		pv.start();
 	    }

@@ -1,8 +1,20 @@
 ---
-title: "Analysis Report"
+title: "ADT Report"
 warning: false
 format: 
   html: default
+  pdf: 
+    toc: false
+page-navigation: true
+---
+
+```{r}
+options(warn = -1)
+```
+---
+title: "ADT Report"
+warning: false
+format: 
   pdf: 
     toc: false
 page-navigation: true
@@ -20,6 +32,7 @@ total_rows <- nrow(df)
 total_icu_admit <- sum(tolower(df$icuAdmit) == 'true')
 total_ward_admit <- total_rows - total_icu_admit
 df$los <- df$dischargeTime - df$admitTime
+
 
 ```
 
@@ -89,23 +102,91 @@ average LOS for ICU-admits| `{r} mean(icu_patients$los)`
 average length of stay on ICU (transfer or otherwise)| tbd 
  
 
----
+
+## Transfer Time Percentage
+
+```{r}
+# Calculate percentage of patients with non-negative transferTime
+num_transfers <- sum(df$transferTime >= 0)
+percent_transfers <- 100 * num_transfers / nrow(df)
+percent_transfers
+```
+
+Percentage of patients with a non-negative transfer time: `{r} percent_transfers`%
+
+## Transfer Time Minus Admit Time
+
+```{r}
+# Create new column for transferTime - admitTime
+df$transfer_delay <- df$transferTime - df$admitTime
+
+# Histogram of transfer_delay (only for non-negative transfer times)
+ggplot(df[df$transferTime >= 0, ], aes(x = transfer_delay)) +
+  geom_histogram(binwidth = 0.1, fill = "orange", color = "black") +
+  labs(title = "Distribution of Transfer Time - Admit Time", x = "Transfer Delay (days)", y = "Count") +
+  theme_minimal()
+```
+
+```{r}
+library(dplyr)
+
+df2 <- read.table("visit_data.txt", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+df2$visitDay <- floor(df2$visitTime)
+
+# Histogram: for each hcwId, each day, distribution of number of visits
+library(dplyr)
+visits_per_day <- df2 %>% group_by(hcwId, visitDay) %>% summarise(n_visits = n())
+ggplot(visits_per_day, aes(x = n_visits)) +
+  geom_histogram(binwidth = 1, fill = "purple", color = "black") +
+  labs(title = "Distribution of Number of Visits per HCW per Day", x = "Number of Visits", y = "Count (HCW-Day pairs)") +
+  theme_minimal()
 
 
+nvisits <- nrow(df2)
+
+# Filter for nurse visits
+df_nurse_visits <- df2[df2$hcwType == 'NURSE', ]
+df_nurses <- distinct(df_nurse_visits, hcwType, hcwId)
+nurse_count <- nrow(df_nurses)
+# Filter for other HCW types
+df_doctor_visits <- df2[df2$hcwType == 'DOCTOR', ]
+df_doctors <- distinct(df_doctor_visits, hcwType, hcwId)
+doctor_count <- nrow(df_doctors)
+df_pt_visits     <- df2[df2$hcwType == 'PT', ]
+df_pts <- distinct(df_pt_visits, hcwType, hcwId)
+pt_count <- nrow(df_pts)
+
+df_ot_visits     <- df2[df2$hcwType == 'OT', ]
+df_ots <- distinct(df_ot_visits, hcwType, hcwId)
+ot_count <- nrow(df_ots)
+
+df_rt_visits     <- df2[df2$hcwType == 'RT', ]
+df_rts <- distinct(df_rt_visits, hcwType, hcwId)
+rt_count <- nrow(df_rts)
+
+```
 
 <!-- Content for transfer vs not page -->
 \newpage
+
+## Total patient visits by hcw type
+
+HCW Type | Total visits (365d) | mean/day
+------ | ----- | -----
+NURSE (`{r} nurse_count`) | `{r} nrow(df_nurse_visits)` | `{r} nrow(df_nurse_visits)/365.0/nurse_count`
+DOCTOR (`{r} doctor_count`) | `{r} nrow(df_doctor_visits)` | `{r} nrow(df_doctor_visits)/365.0/doctor_count`
+OT (`{r} ot_count`) | `{r} nrow(df_ot_visits)` | `{r} nrow(df_ot_visits)/365.0/ot_count`
+PT (`{r} pt_count`) | `{r} nrow(df_pt_visits)` | `{r} nrow(df_pt_visits)/365.0/pt_count`
+RT (`{r} rt_count`) | `{r} nrow(df_rt_visits)` | `{r} nrow(df_rt_visits)/365.0/rt_count`
+
+
+## Average daily visits per patient per hcw per shift
+
+
+
 ::: {.callout-important}
 Future Analysis to be completed:
 
-## HCW Visits
-
-* Average total visits per hcw/shift 
-    + doctor
-    + nurse
-    + rt
-    + pt
-    + ot
 * average daily visits per patient per hcw per shift
     + total and broken out by hcw type
 * average distinct patients visited per shift
@@ -122,4 +203,8 @@ Future Analysis to be completed:
 ## Disease
 * TBD
 
+## punchlist
+* Fix the gamma() + gamma() hcw visit intra-event times
+* Fix the HCW assignment procedure for nurse and doctor
+* 
 :::
