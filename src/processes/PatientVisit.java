@@ -50,7 +50,7 @@ public class PatientVisit extends Process{
 
     public double getNextEventTime(){
 	double currTime = schedule.getTickCount();
-	double elapse = distro.sample();
+	double elapse = 1.0/distro.sample();
 	return Math.max(currTime+elapse,0);
     }
     

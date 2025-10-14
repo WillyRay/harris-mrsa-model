@@ -1,21 +1,29 @@
 package containers;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
+import java.util.Comparator;
 
 import agents.Agent;
 import agents.DischargedPatient;
+import agents.Doctor;
 import agents.HealthCareWorker;
 import agents.Patient;
 import builders.Builder;
 import processes.Discharge;
 import processes.Transfer;
+import repast.simphony.context.Context;
 import repast.simphony.context.DefaultContext;
+import repast.simphony.context.space.graph.NetworkBuilder;
 import repast.simphony.engine.schedule.ScheduledMethod;
+import repast.simphony.space.graph.Network;
 import utils.Chooser;
 import utils.TimeUtils;
 
-public class Hospital extends DefaultContext<Object>{
+public class Hospital extends DefaultContext<Agent> {
     Builder builder;
 
     ArrayList<Patient> patients;
@@ -30,7 +38,7 @@ public class Hospital extends DefaultContext<Object>{
     Transfer transferer;
     ArrayList<String> patientOutputs;
     ArrayList<DischargedPatient> dischargedPatients;
-    
+   private Network<Agent> hospitalnet;
     
     public ArrayList<Patient> patientsNeedingOt;
     public ArrayList<Patient> patientsNeedingRt;
@@ -61,7 +69,9 @@ public class Hospital extends DefaultContext<Object>{
 	patientsNeedingOt = new ArrayList<Patient>();
 	patientsNeedingRt = new ArrayList<Patient>();
 	patientsNeedingPt = new ArrayList<Patient>();
-    }
+	NetworkBuilder<Agent> networkBuilder = new NetworkBuilder<Agent>("doctorNet", this, true);
+	this.hospitalnet = networkBuilder.buildNetwork();
+	  }
 
   
 
@@ -110,7 +120,10 @@ public class Hospital extends DefaultContext<Object>{
 	    if (p.isNeedsRt())	 {
 		this.patientsNeedingRt.add(p);
 	    }
+	    setPatientDoctorAssignments(p);
 	}
+	
+	
     }
 
     public void transferPatient(Patient p) {
@@ -119,6 +132,36 @@ public class Hospital extends DefaultContext<Object>{
 	notInIcu.add(p);
 	p.setCurrentLocation("Ward");
 	p.setTransferTime(TimeUtils.getSchedule().getTickCount());
+    }
+    
+    public void setPatientDoctorAssignments(Patient p) {
+        // Get all doctors as a list
+        java.util.List<Doctor> doctorList = this.getObjectsAsStream(Agent.class)
+            .filter(a -> a instanceof Doctor)
+            .map(a -> (Doctor)a)
+            .collect(Collectors.toList());
+
+        if (doctorList.isEmpty()) {
+            System.out.println("No doctors available for assignment.");
+            return;
+        }
+
+        // Sort by number of assigned patients (edges)
+        doctorList.sort(Comparator.comparingInt(d -> hospitalnet.getDegree(d)));
+
+        // Find the minimum degree
+        int minDegree = hospitalnet.getDegree(doctorList.get(0));
+
+        // Filter to all doctors with the minimum degree
+        java.util.List<Doctor> minDoctors = doctorList.stream()
+            .filter(d -> hospitalnet.getDegree(d) == minDegree)
+            .collect(Collectors.toList());
+
+        // Randomly choose one if there are ties
+        Doctor assignedDoctor = (Doctor) Chooser.chooseOne(minDoctors);
+
+        System.out.println("Assigning patient " + p.getAgentId() + " to doctor " + assignedDoctor.getAgentId());
+        hospitalnet.addEdge(assignedDoctor, p);
     }
 
     public void dischargePatient(Patient p) {

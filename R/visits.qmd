@@ -32,7 +32,9 @@ library(ggplot2)
 ggplot(visits_per_day, aes(x = n_visits)) +
 	geom_histogram(binwidth = 1, fill = "purple", color = "black") +
 	geom_vline(aes(xintercept = mean(visits_per_day$n_visits)), color = "blue", linetype = "dashed", size = 1) +
+
 	geom_vline(aes(xintercept = median(visits_per_day$n_visits)), color = "red", linetype = "dotted", size = 1) +
+
 	labs(title = "Distribution of Number of Visits per HCW per Day",
 			 x = "Number of Visits",
 			 y = "Count (HCW-Day pairs)",
@@ -83,7 +85,9 @@ RT (`{r} rt_count`) | `{r} nrow(df_rt_visits)` | `{r} nrow(df_rt_visits)/365.0/r
 
 
 
+
 ## Histogram: Mean Number of Visits per Patient per Day
+
 
 ```{r}
 # Calculate mean number of visits per patientId per day
@@ -110,6 +114,68 @@ cat("Mean visits per patient per day:", mean_mean_visits, "\n")
 cat("Median visits per patient per day:", median_mean_visits, "\n")
 
 
+```
+
+## Visits per HCW per Day by Type
+
+```{r}
+# Group by hcwType, hcwId, visitDay
+visits_per_day_type <- df2_filtered %>% group_by(hcwType, hcwId, visitDay) %>% summarise(n_visits = n())
+ggplot(visits_per_day_type, aes(x = n_visits)) +
+	geom_histogram(binwidth = 1, fill = "purple", color = "black") +
+	facet_wrap(~ hcwType, scales = "free_y") +
+	labs(title = "Distribution of Number of Visits per HCW per Day by Type",
+			 x = "Number of Visits",
+			 y = "Count (HCW-Day pairs)",
+			 subtitle = "Faceted by HCW Type") +
+	theme_minimal()
+	theme(
+		strip.text = element_text(size = 16),
+		axis.text = element_text(size = 14),
+		axis.title = element_text(size = 16),
+		plot.title = element_text(size = 18),
+		axis.text.x = element_text(size = 14, angle = 0)
+	)
+
+# Summary statistics by hcwType
+summary_visits_per_day <- visits_per_day_type %>%
+	group_by(hcwType) %>%
+	summarise(
+		min_visits = min(n_visits),
+		max_visits = max(n_visits),
+		mean_visits = mean(n_visits),
+		median_visits = median(n_visits),
+		iqr_visits = IQR(n_visits)
+	)
+knitr::kable(summary_visits_per_day, caption = "Summary: Visits per HCW per Day by Type")
+```
+
+## Mean Visits per Patient per Day by HCW Type
+
+```{r}
+# Calculate mean number of visits per patientId per day, grouped by hcwType
+visits_per_patient_day_type <- df2_filtered %>% group_by(hcwType, patientId, visitDay) %>% summarise(n_visits = n())
+mean_visits_type <- visits_per_patient_day_type %>% group_by(hcwType, patientId) %>% summarise(mean_visits = mean(n_visits))
+ggplot(mean_visits_type, aes(x = mean_visits)) +
+	geom_histogram(binwidth = 1, fill = "purple", color = "black") +
+	facet_wrap(~ hcwType, scales = "free_y") +
+	labs(title = "Mean Number of Visits per Patient per Day by HCW Type",
+			 x = "Mean Visits per Day",
+			 y = "Count (Patients)",
+			 subtitle = "Faceted by HCW Type") +
+	theme_minimal()
+	
+
+# Summary statistics by hcwType
+summary_mean_visits <- mean_visits_type %>%
+	group_by(hcwType) %>%
+	summarise(
+		min_mean_visits = min(mean_visits),
+		max_mean_visits = max(mean_visits),
+		mean_mean_visits = mean(mean_visits),
+		median_mean_visits = median(mean_visits)
+	)
+knitr::kable(summary_mean_visits, caption = "Summary: Mean Visits per Patient per Day by HCW Type")
 ```
 
 

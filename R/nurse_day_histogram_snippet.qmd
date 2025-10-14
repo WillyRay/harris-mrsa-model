@@ -1,0 +1,14 @@
+## Distribution of Number of Visits per Nurse per Day
+
+```{r}
+visits_per_nurse_day <- df_nurse_visits %>% group_by(hcwId, visitDay) %>% summarise(n_visits = n())
+ggplot(visits_per_nurse_day, aes(x = n_visits)) +
+  geom_histogram(binwidth = 1, fill = "green", color = "black") +
+  geom_vline(aes(xintercept = mean(visits_per_nurse_day$n_visits)), color = "blue", linetype = "dashed", size = 1) +
+  geom_vline(aes(xintercept = median(visits_per_nurse_day$n_visits)), color = "red", linetype = "dotted", size = 1) +
+  labs(title = "Distribution of Number of Visits per Nurse per Day",
+       x = "Number of Visits",
+       y = "Count (Nurse-Day pairs)",
+       subtitle = "Blue dashed = mean, Red dotted = median") +
+  theme_minimal()
+```

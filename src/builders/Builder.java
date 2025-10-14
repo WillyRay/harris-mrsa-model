@@ -13,6 +13,7 @@ import repast.simphony.engine.schedule.ISchedule;
 import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.space.graph.Network;
 import agents.DischargedPatient;
+import agents.Doctor;
 import agents.HcwType;
 import agents.HealthCareWorker;
 import agents.Patient;
@@ -65,6 +66,10 @@ public class Builder implements ContextBuilder<Object> {
 	private double needsOtIcu = defaultDouble;
 	private double nurseIntraVisitShape = 0.585;
 	private double nurseIntraVisitScale = 48.22;
+	private double doctorIntraVisitShape = 0.585;
+	private double doctorIntraVisitScale = 75.22;
+	private double specialistIntraVisitShape = 0.585;
+	private double specialistIntraVisitScale = 100.22;
 	
 
 	
@@ -170,10 +175,12 @@ public class Builder implements ContextBuilder<Object> {
 	   
 	    
 	    for (int i = 0; i<hospitalCapacity*physiciansPerPatient; i++) {
-		HealthCareWorker doc1 = new HealthCareWorker(HcwType.DOCTOR, hospital);
+		Doctor doc1 = new Doctor(HcwType.DOCTOR, hospital);
 		PatientVisit pv = new PatientVisit(0.02, hospital, doc1);
+		pv.setDistro(new GammaDistribution(doctorIntraVisitShape, doctorIntraVisitScale));	
 		doc1.setAttribute("visit_process", pv);
 		pv.start();
+		hospital.add(doc1);
 	    }
 	    
 	    for (int i = 0; i<hospitalCapacity*nursesPerPatient; i++) {
@@ -188,6 +195,7 @@ public class Builder implements ContextBuilder<Object> {
 		Therapist hcw  = new Therapist(HcwType.RT, hospital);
 		hcw.setNeedsArray(hospital.patientsNeedingRt);
 		PatientVisit pv = new PatientVisit(0.1, hospital, hcw);
+		pv.setDistro(new GammaDistribution(specialistIntraVisitShape, specialistIntraVisitScale));
 		hcw.setAttribute("visit_process", pv);
 		pv.start();	
 	    }
@@ -196,6 +204,7 @@ public class Builder implements ContextBuilder<Object> {
 		Therapist hcw  = new Therapist(HcwType.PT, hospital);
 		hcw.setNeedsArray(hospital.patientsNeedingPt);
 		PatientVisit pv = new PatientVisit(0.1, hospital, hcw);
+		pv.setDistro(new GammaDistribution(specialistIntraVisitShape, specialistIntraVisitScale));
 		hcw.setAttribute("visit_process", pv);
 		pv.start();
 	    }
@@ -204,6 +213,7 @@ public class Builder implements ContextBuilder<Object> {
 		Therapist hcw  = new Therapist(HcwType.OT, hospital);
 		hcw.setNeedsArray(hospital.patientsNeedingOt);
 		PatientVisit pv = new PatientVisit(0.02, hospital, hcw);
+		pv.setDistro(new GammaDistribution(specialistIntraVisitShape, specialistIntraVisitScale));
 		hcw.setAttribute("visit_process", pv);
 		pv.start();
 	    }

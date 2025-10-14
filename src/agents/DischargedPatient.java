@@ -1,6 +1,6 @@
 package agents;
 
-public class DischargedPatient {
+public class DischargedPatient extends Agent {
     
     private double admitTime, dischargeTime, transferTime;
     private boolean imported, icu;

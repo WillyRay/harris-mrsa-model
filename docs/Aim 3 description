@@ -1,0 +1,72 @@
+When determining which settings and patients should be prioritized for use of contact precautions, the
+efficiency and effectiveness of this approach must be considered. Economic evaluations, such as those
+proposed here, can help determine the optimal strategy when taking into account the resources used and the
+outcomes to be achieved among a list of various targeted contact precautions strategies.
+We will develop a dynamic transmission model to compare the cost-effectiveness of different contact
+precaution strategies. For pragmatic considerations, the analysis will compare the costs and effectiveness of
+four different contact precaution strategies across diverse hospital settings: 1) having no MRSA patients on
+contact precautions; 2) having all MRSA patients on contact precautions; 3) having all MRSA patients in the
+ICU only on contact precautions; 3) having certain healthcare professionals (respiratory therapists, physical
+therapists, occupational therapists, nurses, physicians) use contact precautions and other professions not; in
+both ICU and non-ICU settings and 4) having admitted MRSA patients with certain risk factors on contact
+precautions.46
+For each strategy, costs will include both direct medical and indirect (i.e., productivity losses) costs.
+Effectiveness measures will include MRSA colonizations and infections averted, infection-related deaths
+averted, and life-years. An additional effectiveness measure will be PPE saved that could then be used for
+other purposes, which is an especially relevant metric in the current COVID-19 pandemic when PPE is scarce
+and has so many other important uses. After eliminating dominated strategies, we will identify the optimal
+strategy by constructing incremental cost-effectiveness ratios by dividing the incremental cost by the
+incremental effectiveness between two strategies. We will analyze this model from the VA perspective using
+VA-specific cost inputs whenever possible including those from our previous studies which estimated the
+attributable mortality and both pre-49 and post-discharge50 attributable costs from MRSA HAIs in VA facilities.
+D12. Transmission model
+Figure 4 represents a graphical presentation of our dynamic transmission model. At baseline, patients enter
+the simulation model based on their ICU- vs. non-ICU admission location status. According to the initial
+prevalence of MRSA colonization and MRSA infection in ICU or non-ICU settings, we will model the natural
+history of MRSA for patients during the hospital stay and post discharge. We will assume that non-colonized
+patients have a risk of acquiring MRSA colonization based on where they were originally admitted to and the
+colonization prevalence of MRSA colonization in the corresponding setting (the higher the prevalence of MRSA
+colonization, the higher the risk of acquiring MRSA colonization amongst non-colonized patients). An MRSA
+colonized patient may face four possibilities: 1) progressing to MRSA infection; 2) remaining asymptomatically
+Contact PD/PI: HARRIS, ANTHONY
+VA Research Plan Page 29
+colonized; 3) transitioning to not colonized or infected state; and 4) dying. In addition, an MRSA infected
+patient will stay in the same health state until the treatment is complete or he/she dies.
+We will model five types of MRSA infection; “catheter-associated urinary tract infection (CAUTI)”, “central lineassociated
+bloodstream infection (CLABSI)”, “ventilator-associated pneumonia (VAP)”,” skin and soft tissue
+infection (SSTI)”, and “surgical site infection (SSI)”. Also, patients discharged from hospital who are still MRSA
+colonized have a chance of developing an infection which can be treated in an outpatient setting or can lead to
+another subsequent hospitalization. We will use a similar model structure with different sets of probabilities and
+rates for non-ICU admitted patients.
+Model parameters: We will inform our core model parameters including transition probabilities and rates,
+direct medical costs, indirect costs, baseline MRSA colonization and infection prevalence rates for ICU and
+non-ICU settings, and incidence of MRSA colonization and infection rates for ICU and non-ICU settings from
+the published literature.81–84 Data from previously published studies coupled with data from aims 1 and 2 of this
+proposal will inform effectiveness of precaution policies in ICU and non-ICU settings. In the event that we find
+multiple studies reporting on a model parameter, we will conduct an appropriate meta-analysis method to
+inform the pooled estimates.85 To inform the second- and first-order uncertainty, we will assign probabilistic
+distributions to the model parameters of our model in accordance with the International Society for
+Pharmacoeconomics and Outcomes Research (ISPOR)-Society for Medical Decision Making (SMDM)
+Modeling Good Research Practices Task Force.86
+Figure 4. Graphical representation of the dynamic transmission model.
+ICU: intensive care unit; MRSA: methicillin-resistant Staphylococcus aureus; CAUTI: catheter-associated urinary tract
+infection; CLABSI: central line-associated bloodstream infection; VAP: ventilator-associated pneumonia; SSI: surgical
+site infections; SSTI: skin and soft tissue infection
+Analysis: Our model will consist of two elements; an underlying transmission model which will be used to
+simulate the underlying patient health states, and then an economic model which will incorporate the cost
+components associated with the underlying patient events and histories. We will simulate patient flow, and
+MRSA transmission and infection in a 100-bed hospital having 15 ICU beds for one year, following patient
+movement after discharge during that period, allowing for hospital readmissions. Model parameters
+incorporated in the transmission component of the model will be treated as fixed, estimated as the mean of the
+Contact PD/PI: HARRIS, ANTHONY
+VA Research Plan Page 30
+underlying parameter distribution. For each run of the transmission model, key events and patient outcomes
+will be tracked recorded to and output for the cost analysis evaluation, as we have done previously.48 The
+economic analysis will then be implemented as a Monte Carlo based simulation that accounts for second-order
+variation in the uncertainty of the economic parameter inputs. This analysis will be repeated across a range of
+transmission model parameters based on our estimated distributions, representing a sensitivity analysis for our
+model outputs and evaluating the robustness of our results. Given the choice of one-year time horizon in the
+base case analysis, we will not discount future health and economic values. Nevertheless, we will run separate
+scenario analysis to run the model for 2 and 5 years, in which case, we will discount the future health and
+economic values by using a 3% discount rate as recommended by the guidelines.87 We will build our dynamic
+transmission model in R version 3.5.1.

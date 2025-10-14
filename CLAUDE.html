@@ -1,0 +1,346 @@
+<?xml version='1.0' encoding='utf-8' ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	</head>
+	<body>
+		<h1 id="claude-md">CLAUDE.md</h1>
+		<p>This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.</p>
+		<h2 id="project-overview">Project Overview</h2>
+		<p>This is an 
+			<strong>Agent-Based Model (ABM)</strong> for simulating MRSA transmission in a hospital setting, built using the 
+			<strong>Repast Simphony</strong> framework. The model simulates patient admissions, transfers, discharges, healthcare worker (HCW) interactions, and potential disease transmission dynamics.
+		</p>
+		<h2 id="technology-stack">Technology Stack</h2>
+		<ul>
+			<li>
+				<strong>Framework</strong>: Repast Simphony (Java-based ABM framework)
+			</li>
+			<li>
+				<strong>Language</strong>: Java (previously Groovy, now ported to Java)
+			</li>
+			<li>
+				<strong>IDE</strong>: Eclipse (configured via 
+				<code>.project</code>, 
+				<code>.classpath</code>)
+			</li>
+			<li>
+				<strong>Analysis</strong>: R with Quarto (.qmd files) for data analysis and visualization
+			</li>
+			<li>
+				<strong>Dependencies</strong>: Apache Commons Math3 for statistical distributions
+			</li>
+		</ul>
+		<h2 id="project-structure">Project Structure</h2>
+		<h3 id="core-java-packages">Core Java Packages</h3>
+		<ul>
+			<li>
+				<strong>`builders/`</strong>: Contains 
+				<code>Builder.java</code> - the main model initialization and parameter configuration class
+			</li>
+			<li>Implements 
+				<code>ContextBuilder&lt;Object&gt;</code> - the Repast Simphony entry point
+			</li>
+			<li>Configures model parameters (hospital capacity, staffing ratios, disease transmission probabilities)</li>
+			<li>Scheduled methods for simulation lifecycle (daily operations, end-of-run outputs)</li>
+			<li>
+				<strong>`agents/`</strong>: Agent classes representing entities in the simulation
+			</li>
+			<li>
+				<code>Agent.java</code> - Base agent class with attribute storage
+			</li>
+			<li>
+				<code>Patient.java</code> - Patient agents with admission/discharge/transfer tracking
+			</li>
+			<li>
+				<code>HealthCareWorker.java</code> - HCW agents (doctors, nurses)
+			</li>
+			<li>
+				<code>Therapist.java</code> - Specialized HCWs (RT, PT, OT)
+			</li>
+			<li>
+				<code>DischargedPatient.java</code> - Record object for discharged patients
+			</li>
+			<li>
+				<strong>`containers/`</strong>:
+			</li>
+			<li>
+				<code>Hospital.java</code> - Main container managing patients, HCWs, beds (ICU/ward), discharges
+			</li>
+			<li>
+				<code>Discharged.java</code> - Container for discharged patient records
+			</li>
+			<li>
+				<strong>`processes/`</strong>: Event-driven processes using stochastic timing
+			</li>
+			<li>
+				<code>Process.java</code> - Abstract base class for scheduled processes with exponential distributions
+			</li>
+			<li>
+				<code>Admission.java</code> - Handles patient admissions
+			</li>
+			<li>
+				<code>Discharge.java</code> - Handles patient discharges (separate ICU/ward parameterizations)
+			</li>
+			<li>
+				<code>Transfer.java</code> - Handles ICU-to-ward transfers
+			</li>
+			<li>
+				<code>PatientVisit.java</code> - Schedules HCW visits to patients
+			</li>
+			<li>
+				<code>AssignedVisit.java</code>, 
+				<code>SpecialtyVisit.java</code> - Visit specializations
+			</li>
+			<li>
+				<strong>`processes/disease/`</strong>: Disease-related enumerations
+			</li>
+			<li>
+				<code>DiseaseTypes.java</code>, 
+				<code>DiseaseStates.java</code>
+			</li>
+			<li>
+				<strong>`events/`</strong>: Event communication system
+			</li>
+			<li>
+				<code>EventSender.java</code>, 
+				<code>EventListener.java</code>
+			</li>
+			<li>
+				<strong>`outputs/`</strong>: Output file generation
+			</li>
+			<li>
+				<code>OutputFileSingle.java</code>, 
+				<code>DischargedLos.java</code>
+			</li>
+		</ul>
+		<h3 id="r-analysis-files">R Analysis Files</h3>
+		<p>Located in 
+			<code>R/</code>:
+		</p>
+		<ul>
+			<li>
+				<strong>`analysis.qmd`</strong>: Comprehensive ADT (Admission-Discharge-Transfer) analysis report
+			</li>
+			<li>LOS (length of stay) distributions by location</li>
+			<li>ICU vs Ward admission statistics</li>
+			<li>Transfer patterns and timing</li>
+			<li>HCW visit summaries by type</li>
+			<li>
+				<strong>`visits.qmd`</strong>, 
+				<strong>`visits2.qmd`</strong>: HCW visit analysis with detailed histograms and summary statistics
+			</li>
+			<li>Generated PDFs: 
+				<code>analysis.pdf</code>, 
+				<code>visits.pdf</code>, 
+				<code>visits2.pdf</code>
+			</li>
+		</ul>
+		<h3 id="configuration-files">Configuration Files</h3>
+		<ul>
+			<li>
+				<strong>`harris-mrsa-model.rs/`</strong>: Repast Simphony scenario configuration
+			</li>
+			<li>
+				<code>parameters.xml</code> - Model parameters (editable via Repast GUI)
+			</li>
+			<li>
+				<code>scenario.xml</code> - Scenario metadata
+			</li>
+			<li>
+				<code>context.xml</code> - Simulation context configuration
+			</li>
+			<li>Data loaders, chart configurations, launch properties</li>
+		</ul>
+		<h2 id="running-the-model">Running the Model</h2>
+		<h3 id="from-eclipse-repast-simphony-ide">From Eclipse/Repast Simphony IDE</h3>
+		<ol>
+			<li>Open the project in Eclipse with Repast Simphony installed</li>
+			<li>Right-click on the project → Run As → Repast Simphony Model</li>
+			<li>The model initializes via 
+				<code>Builder.build()</code> and runs for 365 ticks (days)
+			</li>
+			<li>Output files are generated at the end of the run</li>
+		</ol>
+		<h3 id="model-outputs">Model Outputs</h3>
+		<p>The simulation generates two primary output files:</p>
+		<ol>
+			<li>
+				<strong>`discharged_patients.txt`</strong> - CSV with columns:
+			</li>
+			<li>
+				<code>agentId</code>, 
+				<code>admitTime</code>, 
+				<code>dischargeTime</code>, 
+				<code>icuAdmit</code>, 
+				<code>transferTime</code>, 
+				<code>admitLocation</code>, 
+				<code>dischargeLocation</code>
+			</li>
+			<li>
+				<strong>`visit_data.txt`</strong> - CSV with columns:
+			</li>
+			<li>
+				<code>hcwId</code>, 
+				<code>hcwType</code>, 
+				<code>patientId</code>, 
+				<code>patientLocation</code>, 
+				<code>visitTime</code>
+			</li>
+		</ol>
+		<h3 id="analyzing-results">Analyzing Results</h3>
+		<p>After running the simulation:</p>
+		<pre class="language-r"><code class="language-r"># From R directory
+quarto render analysis.qmd
+quarto render visits.qmd</code></pre>
+		<p>This generates PDF reports with:</p>
+		<ul>
+			<li>ADT statistics and visualizations</li>
+			<li>LOS distributions</li>
+			<li>HCW visit patterns and workload analysis</li>
+		</ul>
+		<h2 id="key-model-parameters">Key Model Parameters</h2>
+		<p>Defined in 
+			<code>Builder.java</code> (lines 47-82):
+		</p>
+		<ul>
+			<li>
+				<strong>Hospital Configuration</strong>: 
+				<code>hospitalCapacity</code> (85), 
+				<code>icuCapacity</code> (15)
+			</li>
+			<li>
+				<strong>ADT Parameters</strong>:
+			</li>
+			<li>
+				<code>admissionsRate</code> (0.2) - mean inter-arrival time
+			</li>
+			<li>
+				<code>dischargeShape/Scale</code> - Gamma distribution parameters for ward discharges
+			</li>
+			<li>
+				<code>icuDischargeShape/Scale</code> - Gamma parameters for ICU discharges
+			</li>
+			<li>
+				<code>icuAdmitProbability</code> (0.15)
+			</li>
+			<li>
+				<code>icuTransferProbability</code> (0.1) with Gamma timing
+			</li>
+			<li>
+				<strong>Staffing Ratios</strong>:
+			</li>
+			<li>
+				<code>nursesPerPatient</code> (0.3)
+			</li>
+			<li>
+				<code>physiciansPerPatient</code> (0.2)
+			</li>
+			<li>
+				<code>rtsPerPatient</code>, 
+				<code>ptsPerPatient</code>, 
+				<code>otsPerPatient</code> (currently 0.0)
+			</li>
+			<li>
+				<strong>Visit Patterns</strong>:
+			</li>
+			<li>
+				<code>nurseIntraVisitShape/Scale</code> - Gamma(0.585, 48.22) for time between nurse visits
+			</li>
+		</ul>
+		<h2 id="architecture-patterns">Architecture Patterns</h2>
+		<h3 id="process-based-scheduling">Process-Based Scheduling</h3>
+		<p>The model uses a discrete-event simulation pattern:</p>
+		<ul>
+			<li>
+				<code>Process.java</code> uses 
+				<code>RealDistribution</code> (typically Exponential or Gamma) for inter-event times
+			</li>
+			<li>Each process schedules itself recursively via 
+				<code>start()</code> → 
+				<code>fire()</code> → 
+				<code>start()</code>
+			</li>
+			<li>Built on Repast's 
+				<code>ISchedule</code> system
+			</li>
+		</ul>
+		<h3 id="agent-lifecycle">Agent Lifecycle</h3>
+		<ol>
+			<li>
+				<strong>Admission</strong> (
+				<code>Admission.java</code>): Creates 
+				<code>Patient</code>, assigns to ICU/Ward, schedules discharge
+			</li>
+			<li>
+				<strong>Transfer</strong> (
+				<code>Transfer.java</code>): Moves patient ICU→Ward based on scheduled time
+			</li>
+			<li>
+				<strong>Visits</strong> (
+				<code>PatientVisit.java</code>): HCWs visit patients stochastically
+			</li>
+			<li>
+				<strong>Discharge</strong> (
+				<code>Discharge.java</code>): Removes patient, creates 
+				<code>DischargedPatient</code> record
+			</li>
+		</ol>
+		<h3 id="data-collection">Data Collection</h3>
+		<ul>
+			<li>
+				<code>Hospital.visitData</code> - StringBuffer accumulating visit records
+			</li>
+			<li>
+				<code>Hospital.dischargedPatients</code> - ArrayList of DischargedPatient objects
+			</li>
+			<li>Written to files in 
+				<code>Builder.writeSingleRunFiles()</code> at tick 365
+			</li>
+		</ul>
+		<h2 id="development-notes">Development Notes</h2>
+		<ul>
+			<li>
+				<strong>Recent Migration</strong>: Code was ported from Groovy to Java (see commit history)
+			</li>
+			<li>
+				<strong>Therapy Needs</strong>: Daily reset of 
+				<code>patientsNeedingOt/Pt/Rt</code> lists (Builder.daily() at line 89)
+			</li>
+			<li>
+				<strong>HCW Assignment</strong>: Doctors and nurses currently use generic PatientVisit (see lines 153-156, note about assignment procedure)
+			</li>
+			<li>
+				<strong>Disease Model</strong>: Disease types/states defined but transmission logic not yet fully implemented
+			</li>
+		</ul>
+		<h2 id="known-todos-from-analysis-qmd">Known TODOs (from analysis.qmd)</h2>
+		<ul>
+			<li>Fix HCW visit inter-event times (gamma() + gamma() for intra-visit + duration)</li>
+			<li>Improve HCW-to-patient assignment procedures for nurses and doctors</li>
+			<li>Implement disease transmission probabilities (currently defined as parameters but not used)</li>
+		</ul>
+		<h2 id="file-locations">File Locations</h2>
+		<ul>
+			<li>Java source: 
+				<code>src/</code>
+			</li>
+			<li>Compiled classes: 
+				<code>bin/</code> (gitignored)
+			</li>
+			<li>R analysis: 
+				<code>R/</code>
+			</li>
+			<li>Documentation: 
+				<code>docs/</code>
+			</li>
+			<li>Model configuration: 
+				<code>harris-mrsa-model.rs/</code>
+			</li>
+			<li>Output data: Root directory (
+				<code>discharged_patients.txt</code>, 
+				<code>visit_data.txt</code>)
+			</li>
+		</ul>
+	</body>
+</html>
