@@ -48,7 +48,7 @@ public class Builder implements ContextBuilder<Object> {
 	// adt parameters
 	private int hospitalCapacity = 85;
 	private int icuCapacity = 15;
-	private double admissionsRate = 0.2; //mean intra_event time
+	private double admissionsRate = 0.05; //mean intra_event time
 	private double dischargeShape = 1.253;
 	private double dischargeScale = 0.768;
 	private double icuDischargeShape = 0.916;
@@ -58,18 +58,19 @@ public class Builder implements ContextBuilder<Object> {
 	private double icuTransferProbability = 0.1; //probability of transfer to ICU
 	private double icuTransferShape = 0.5;
 	private double icuTransferScale = 1.0;
-	private double needsRt = defaultDouble;
-	private double needsPt = defaultDouble;
-	private double needsOt = defaultDouble;
-	private double needsRtIcu = defaultDouble;
-	private double needsPtIcu = defaultDouble;
-	private double needsOtIcu = defaultDouble;
-	private double nurseIntraVisitShape = 0.585;
-	private double nurseIntraVisitScale = 48.22;
-	private double doctorIntraVisitShape = 0.585;
-	private double doctorIntraVisitScale = 75.22;
-	private double specialistIntraVisitShape = 0.585;
-	private double specialistIntraVisitScale = 100.22;
+	private double needsRt = 0.2; //these are not true.
+	private double needsPt = 0.3;
+	private double needsOt = 0.4;
+	private double needsRtIcu = needsRt;
+	private double needsPtIcu = needsPt;
+	private double needsOtIcu = needsOt;
+	private double nurseIntraVisitShape = 0.54;
+	private double nurseIntraVisitScale = 55.1;
+	private double doctorIntraVisitShape = 0.52;
+	private double doctorIntraVisitScale = 90.7;
+	private double specialistIntraVisitShape = 0.54;
+	private double specialistIntraVisitScale = 61.7;
+	private double roomVisitDuration = 6.6;
 	
 
 	
@@ -96,6 +97,7 @@ public class Builder implements ContextBuilder<Object> {
 	  }	
 	   @ScheduledMethod(start = 0.5, interval = 0.5)
 	    public void perShiftOperations() {
+	       this.hospital.setPatientNurseAssignments();
 	   } 
 	    
 	 @ScheduledMethod(start =365, interval = 1)
@@ -155,10 +157,7 @@ public class Builder implements ContextBuilder<Object> {
 		
 		
 		buildHealthCareWorkers();
-		HealthCareWorker doc1 = new HealthCareWorker(HcwType.DOCTOR, hospital);
-		PatientVisit pv = new PatientVisit(0.2, hospital, doc1);
-		doc1.setAttribute("visit_process", pv);
-		pv.start();
+		
 		
 		
 		NetworkBuilder networkBuilder = new NetworkBuilder("icu", context, true);
@@ -184,12 +183,13 @@ public class Builder implements ContextBuilder<Object> {
 	    }
 	    
 	    for (int i = 0; i<hospitalCapacity*nursesPerPatient; i++) {
-		HealthCareWorker nurse = new HealthCareWorker(HcwType.NURSE, hospital);
-		PatientVisit pv = new PatientVisit(0.02, hospital, nurse);
-		pv.setDistro(new GammaDistribution(nurseIntraVisitShape, nurseIntraVisitScale));
-		nurse.setAttribute("visit_process", pv);
-		pv.start();
-	    }
+            HealthCareWorker nurse = new HealthCareWorker(HcwType.NURSE, hospital);
+            PatientVisit pv = new PatientVisit(0.02, hospital, nurse);
+            pv.setDistro(new GammaDistribution(nurseIntraVisitShape, nurseIntraVisitScale));
+            nurse.setAttribute("visit_process", pv);
+            pv.start();
+            hospital.add(nurse);
+        }
 	    
 	    for (int i = 0; i<hospitalCapacity*rtsPerPatient; i++) {
 		Therapist hcw  = new Therapist(HcwType.RT, hospital);

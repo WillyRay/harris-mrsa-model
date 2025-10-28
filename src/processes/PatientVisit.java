@@ -4,10 +4,12 @@ import org.apache.commons.math3.distribution.LogNormalDistribution;
 
 import agents.HcwType;
 import agents.HealthCareWorker;
+import cern.jet.random.Gamma;
 import containers.Hospital;
 import repast.simphony.engine.schedule.ISchedulableAction;
 import repast.simphony.engine.schedule.Schedule;
 import repast.simphony.engine.schedule.ScheduleParameters;
+import utils.TimeUtils;
 
 public class PatientVisit extends Process{
     Hospital target;
@@ -17,6 +19,7 @@ public class PatientVisit extends Process{
     HealthCareWorker hcw;
     double meanObservedIntraEventTime;
     HcwType hcwType;
+ 
 
 
 
@@ -50,7 +53,8 @@ public class PatientVisit extends Process{
 
     public double getNextEventTime(){
 	double currTime = schedule.getTickCount();
-	double elapse = 1.0/distro.sample();
+	
+	double elapse = distro.sample()*TimeUtils.MINUTE + 6.6*TimeUtils.MINUTE;
 	return Math.max(currTime+elapse,0);
     }
     

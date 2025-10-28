@@ -1,6 +1,6 @@
 ---
 title: "Healthcare Worker Visit Analysis"
-format: pdf
+format: html
 ---
 
 ```{r}
