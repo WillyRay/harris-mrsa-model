@@ -6,16 +6,20 @@ import containers.Hospital;
 import processes.Admission;
 import processes.PatientVisit;
 import repast.simphony.context.Context;
+import repast.simphony.context.DefaultContext;
 import repast.simphony.context.space.graph.NetworkBuilder;
 import repast.simphony.dataLoader.ContextBuilder;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ISchedule;
 import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.space.graph.Network;
+import agents.Agent;
 import agents.DischargedPatient;
 import agents.Doctor;
 import agents.HcwType;
 import agents.HealthCareWorker;
+import agents.IcuRt;
+import agents.Nurse;
 import agents.Patient;
 import agents.Therapist;
 import utils.Chooser;
@@ -46,8 +50,9 @@ public class Builder implements ContextBuilder<Object> {
 	private int defaultInt = 1;
 	
 	// adt parameters
-	private int hospitalCapacity = 85;
-	private int icuCapacity = 15;
+	private int hospitalCapacity = 120; //total hospital capacity ward+icu
+	private int icuCapacity = 20;
+	// ward capacity is hospitalCapacity - icuCapacity
 	private double admissionsRate = 0.05; //mean intra_event time
 	private double dischargeShape = 1.253;
 	private double dischargeScale = 0.768;
@@ -60,17 +65,26 @@ public class Builder implements ContextBuilder<Object> {
 	private double icuTransferScale = 1.0;
 	private double needsRt = 0.2; //these are not true.
 	private double needsPt = 0.3;
-	private double needsOt = 0.4;
+	private double needsOt = 0.4; //ward only
 	private double needsRtIcu = needsRt;
 	private double needsPtIcu = needsPt;
 	private double needsOtIcu = needsOt;
+	//These are all in minutes.
 	private double nurseIntraVisitShape = 0.54;
 	private double nurseIntraVisitScale = 55.1;
+	private double nurseICUIntraVisitShape = 0.54;
+	private double nurseICUIntraVisitScale = 20;
 	private double doctorIntraVisitShape = 0.52;
 	private double doctorIntraVisitScale = 90.7;
-	private double specialistIntraVisitShape = 0.54;
+	private double doctorIcuIntraVisitShape = 0.52;
+	private double doctorIcuIntraVisitScale = 35.3;
 	private double specialistIntraVisitScale = 61.7;
+	private double specialistIntraVisitShape = 0.62;
 	private double roomVisitDuration = 6.6;
+	private Context<Agent> wardContext = new DefaultContext<Agent>();
+	private Context<Agent> icuContext = new DefaultContext<Agent>();
+	
+	 
 	
 
 	
@@ -80,8 +94,11 @@ public class Builder implements ContextBuilder<Object> {
 	private double rtsPerPatient = defaultDouble;
 	private double ptsPerPatient = defaultDouble;
 	private double otsPerPatient = defaultDouble;
-	private double nursesPerPatient = 0.3;
+	private double nursesPerPatient = 0.2; //per bed, actually 
 	private double physiciansPerPatient = 0.2;
+	private double icuNursesPerPatient = 0.5;
+	private double icuPhysiciansPerPatient = 0.3;
+	private double icuRtsPerPatient = 0.1;
 	
 	//transmission parameters
 	private double cleanPtColonizeddHcwColonizationProb = defaultDouble;
@@ -145,7 +162,7 @@ public class Builder implements ContextBuilder<Object> {
 		    
 	
 	   
-	    
+	    	
 		schedule = repast.simphony.engine.environment.RunEnvironment.getInstance().getCurrentSchedule();
 		
 		//WRR: Create a hospital with 90 beds.
@@ -171,25 +188,66 @@ public class Builder implements ContextBuilder<Object> {
 	}
 	
 	private void buildHealthCareWorkers() {
-	   
-	    
-	    for (int i = 0; i<hospitalCapacity*physiciansPerPatient; i++) {
+	      
+	    for (int i = 0; i<(hospitalCapacity-icuCapacity)*physiciansPerPatient; i++) {
 		Doctor doc1 = new Doctor(HcwType.DOCTOR, hospital);
 		PatientVisit pv = new PatientVisit(0.02, hospital, doc1);
 		pv.setDistro(new GammaDistribution(doctorIntraVisitShape, doctorIntraVisitScale));	
 		doc1.setAttribute("visit_process", pv);
 		pv.start();
 		hospital.add(doc1);
+		wardContext.add(doc1);
+		doc1.icu=false;
+		
 	    }
 	    
-	    for (int i = 0; i<hospitalCapacity*nursesPerPatient; i++) {
-            HealthCareWorker nurse = new HealthCareWorker(HcwType.NURSE, hospital);
+	    for (int i = 0; i<icuCapacity*icuPhysiciansPerPatient; i++) {
+		Doctor doc1 = new Doctor(HcwType.DOCTOR, hospital);
+		PatientVisit pv = new PatientVisit(0.04, hospital, doc1);
+		pv.setDistro(new GammaDistribution(doctorIcuIntraVisitShape, doctorIcuIntraVisitScale));	
+		doc1.setAttribute("visit_process", pv);
+		pv.start();
+		hospital.add(doc1);
+		icuContext.add(doc1);
+		doc1.icu=true;
+			
+	    }
+	    
+	    for (int i = 0; i<(hospitalCapacity-icuCapacity)*nursesPerPatient; i++) {
+            Nurse nurse = new Nurse(HcwType.NURSE, hospital);
             PatientVisit pv = new PatientVisit(0.02, hospital, nurse);
             pv.setDistro(new GammaDistribution(nurseIntraVisitShape, nurseIntraVisitScale));
             nurse.setAttribute("visit_process", pv);
             pv.start();
             hospital.add(nurse);
-        }
+            wardContext.add(nurse);
+            nurse.icu=false;
+	    }
+	    
+	    for (int i = 0; i< (icuCapacity)*icuNursesPerPatient; i++) {
+	            Nurse nurse = new Nurse(HcwType.NURSE, hospital);
+	            PatientVisit pv = new PatientVisit(1.0/3.0, hospital, nurse);
+	            pv.setDistro(new GammaDistribution(nurseICUIntraVisitShape, nurseICUIntraVisitScale));
+	            nurse.setAttribute("visit_process", pv);
+	            pv.start();
+	            hospital.add(nurse);
+	            icuContext.add(nurse);
+	            nurse.icu=true;
+		    }
+	    //IcuRts
+	    for (int i = 0; i< (icuCapacity)*icuRtsPerPatient; i++) {
+	            //Nurse nurse = new Nurse(HcwType.NURSE, hospital);
+	            IcuRt icuRt = new IcuRt(HcwType.ICURT, hospital);	
+	       	    PatientVisit pv = new PatientVisit(1.0/3.0, hospital, icuRt);
+	            pv.setDistro(new GammaDistribution(nurseICUIntraVisitShape, nurseICUIntraVisitScale));
+	            icuRt.setAttribute("visit_process", pv);
+	            pv.start();
+	            hospital.add(icuRt);
+	            icuContext.add(icuRt);
+	            icuRt.icu=true;
+		    }
+	    
+		    
 	    
 	    for (int i = 0; i<hospitalCapacity*rtsPerPatient; i++) {
 		Therapist hcw  = new Therapist(HcwType.RT, hospital);
@@ -452,5 +510,18 @@ public class Builder implements ContextBuilder<Object> {
 	public void setContaminedPtCleanHcwColonizationProb(double contaminedPtCleanHcwColonizationProb) {
 	    this.contaminedPtCleanHcwColonizationProb = contaminedPtCleanHcwColonizationProb;
 	}
+	public Context<Agent> getWardContext() {
+	    return wardContext;
+	}
+	public void setWardContext(Context<Agent> wardContext) {
+	    this.wardContext = wardContext;
+	}
+	public Context<Agent> getIcuContext() {
+	    return icuContext;
+	}
+	public void setIcuContext(Context<Agent> icuContext) {
+	    this.icuContext = icuContext;
+	}
+
 
 }

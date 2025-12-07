@@ -9,6 +9,7 @@ public class HealthCareWorker extends Agent {
     private boolean contaminated;
     public HcwType TYPE;
     public Hospital hospital;
+    public boolean icu;
      
     public HealthCareWorker(HcwType hcwtype, Hospital hospital) {
 	super();

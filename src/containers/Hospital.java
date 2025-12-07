@@ -30,7 +30,7 @@ public class Hospital extends DefaultContext<Agent> {
     ArrayList<Patient> patients;
     ArrayList<HealthCareWorker> hcws;
     int bedCount;
-    ArrayList<Patient> inIcu;
+    public ArrayList<Patient> inIcu;
     int icuBedCount;
     ArrayList<Patient> notInIcu;
     int wardBedCount;
@@ -45,11 +45,16 @@ public class Hospital extends DefaultContext<Agent> {
     public ArrayList<Patient> patientsNeedingRt;
     public ArrayList<Patient> patientsNeedingPt;
     
+    public Context<Agent> wardContext;
+    public Context<Agent> icuContext;
+    
     public StringBuffer visitData;
 
     public Hospital(Builder builder, int bedCount, int icuBedCount) {
 	super();
 	
+	this.wardContext = builder.getWardContext();
+	this.icuContext = builder.getIcuContext();
 	this.visitData = new StringBuffer();
 	visitData.append("hcwId,hcwType,patientId,patientLocation,visitTime\n");
 	
@@ -98,6 +103,7 @@ public class Hospital extends DefaultContext<Agent> {
 		p.setAttribute("icuAdmit", true);
 		p.setCurrentLocation("ICU");
 		p.setAdmitTime(TimeUtils.getSchedule().getTickCount());
+		this.icuContext.add(p);
 	    } else {
 
 		patients.add(p);
@@ -110,6 +116,7 @@ public class Hospital extends DefaultContext<Agent> {
 		p.setNeedsRt(Chooser.randomTrue(builder.getNeedsRt()));
 		p.setNeedsPt(Chooser.randomTrue(builder.getNeedsPt()));
 		p.setAdmitTime(TimeUtils.getSchedule().getTickCount());   
+		this.wardContext.add(p);
 	    }
 	  
 	    if (p.isNeedsOt()) {
@@ -136,11 +143,23 @@ public class Hospital extends DefaultContext<Agent> {
     }
     
     public void setPatientDoctorAssignments(Patient p) {
+	java.util.List<Doctor> doctorList = new ArrayList<Doctor>();
+	if (p.getCurrentLocation().equals("Ward")) {
         // Get all doctors as a list
-        java.util.List<Doctor> doctorList = this.getObjectsAsStream(Agent.class)
-            .filter(a -> a instanceof Doctor)
+	    doctorList = wardContext.getObjectsAsStream(Agent.class)
+	    .filter(a -> a instanceof Doctor)
             .map(a -> (Doctor)a)
             .collect(Collectors.toList());
+        
+	} else {
+	    	// Get all doctors as a list
+	    doctorList = icuContext.getObjectsAsStream(Agent.class)
+	    .filter(a -> a instanceof Doctor)
+	    .map(a -> (Doctor)a)
+	    .collect(Collectors.toList());
+	} 
+	    
+	
 
         if (doctorList.isEmpty()) {
             System.out.println("No doctors available for assignment.");
@@ -161,8 +180,9 @@ public class Hospital extends DefaultContext<Agent> {
         // Randomly choose one if there are ties
         Doctor assignedDoctor = (Doctor) Chooser.chooseOne(minDoctors);
 
-        System.out.println("Assigning patient " + p.getAgentId() + " to doctor " + assignedDoctor.getAgentId());
+        //System.out.println("Assigning patient " + p.getAgentId() +" " +p.getCurrentLocation() + " to doctor " + assignedDoctor.getAgentId() + " ICU: " + assignedDoctor.icu);
         hospitalnet.addEdge(assignedDoctor, p);
+    
     }
     
     public void setPatientNurseAssignments() {
@@ -187,10 +207,23 @@ public class Hospital extends DefaultContext<Agent> {
     //loop over all patients
     for (Patient p : patients) {
         // Get all nurses as a list (TYPE == HcwType.NURSE)
-        java.util.List<HealthCareWorker> nurseList = this.getObjectsAsStream(Agent.class)
-            .filter(a -> (a instanceof HealthCareWorker) && (((HealthCareWorker)a).getTYPE() == agents.HcwType.NURSE))
-            .map(a -> (HealthCareWorker)a)
-            .collect(Collectors.toList());
+	java.util.List<HealthCareWorker> nurseList = new ArrayList<HealthCareWorker>();
+        
+	if (p.getCurrentLocation().equals("Ward")) {
+	nurseList = wardContext.getObjectsAsStream(Agent.class)
+	    .filter(a -> (a instanceof HealthCareWorker) && (((HealthCareWorker)a).getTYPE() == agents.HcwType.NURSE))
+	    .map(a -> (HealthCareWorker)a)
+	    .collect(Collectors.toList());
+	} else {
+	    nurseList = icuContext.getObjectsAsStream(Agent.class)
+	    .filter(a -> (a instanceof HealthCareWorker) && (((HealthCareWorker)a).getTYPE() == agents.HcwType.NURSE))
+	    .map(a -> (HealthCareWorker)a)
+	    .collect(Collectors.toList());
+	}
+	if (nurseList.isEmpty()) {
+	    System.out.println("No nurses available for assignment.");
+	    continue;
+	}
 
         // Sort by number of assigned patients (edges)
         nurseList.sort(Comparator.comparingInt(n -> hospitalnet.getDegree(n)));
@@ -234,11 +267,11 @@ public class Hospital extends DefaultContext<Agent> {
         }
         // Assign nurses, ensuring they are distinct
         if (assignedNurse1 != null) {
-            System.out.println("Assigning patient " + p.getAgentId() + " to nurse " + assignedNurse1.getAgentId());
+            //System.out.println("Assigning patient " + p.getAgentId() +" " +p.getCurrentLocation() + " to nurse " + assignedNurse1.getAgentId() + " ICU: " + assignedNurse1.icu);
             hospitalnet.addEdge(assignedNurse1, p);
         }
         if (assignedNurse2 != null && assignedNurse2 != assignedNurse1) {
-            System.out.println("Assigning patient " + p.getAgentId() + " to nurse " + assignedNurse2.getAgentId());
+            //System.out.println("Assigning patient " + p.getAgentId() +" " +p.getCurrentLocation() + " to nurse " + assignedNurse2.getAgentId() + " ICU: " + assignedNurse2.icu);
             hospitalnet.addEdge(assignedNurse2, p);
         }
     }
@@ -313,5 +346,17 @@ public class Hospital extends DefaultContext<Agent> {
 
     public void setDischargedPatients(ArrayList<DischargedPatient> dischargedPatients) {
         this.dischargedPatients = dischargedPatients;
+    }
+
+
+
+    public Network<Agent> getHospitalnet() {
+        return hospitalnet;
+    }
+
+
+
+    public void setHospitalnet(Network<Agent> hospitalnet) {
+        this.hospitalnet = hospitalnet;
     }
 }

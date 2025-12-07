@@ -1,0 +1,66 @@
+---
+title: "Simulation Visit Data Analysis - Comparison Tables"
+format: pdf
+---
+
+```{r}
+options(warn = -1)
+suppressPackageStartupMessages(library(dplyr))
+```
+
+# Simulation Visit Data Analysis
+## Comparison Tables (Based on visit_data.txt)
+
+```{r}
+# Read visit data
+df <- read.table("visit_data.txt", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
+# Simulation runs for 365 days (ticks)
+sim_days <- 365
+
+cat("Simulation Duration: 365 days\n")
+cat("Total Visits Recorded:", nrow(df), "\n")
+cat("Unique HCWs:", n_distinct(df$hcwId), "\n")
+cat("Unique Patients:", n_distinct(df$patientId), "\n")
+```
+
+---
+
+## Table 1: Average Patient Room Visit Frequency per 24 Hours
+*Visits per HCW per 24-hour day, averaged across all patients and days*
+
+```{r}
+# Reference targets from Word document
+reference_targets_table1 <- data.frame(
+  hcwType = c("DOCTOR", "DOCTOR", "NURSE", "NURSE", "RT", "RT", "PT", "PT", "OT", "OT", "ICURT"),
+  patientLocation = c("ICU", "Ward", "ICU", "Ward", "ICU", "Ward", "ICU", "Ward", "ICU", "Ward", "ICU"),
+  target_min = c(20, 15, 60, 30, 6, 1, 1, 0.8, 0.7, 0.3, 6),
+  target_max = c(25, 20, 80, 40, 15, 2, 2, 1.2, 2.0, 1.0, 15)
+)
+
+table1 <- df %>%
+  group_by(hcwType, patientLocation) %>%
+  summarise(
+    total_visits = n(),
+    num_hcws = n_distinct(hcwId),
+    visits_per_hcw_per_day = n() / (n_distinct(hcwId) * sim_days),
+    .groups = 'drop'
+  ) %>%
+  arrange(hcwType, patientLocation) %>%
+  left_join(reference_targets_table1, by = c("hcwType", "patientLocation")) %>%
+  mutate(
+    visits_per_hcw_per_day = round(visits_per_hcw_per_day, 2),
+    target_range = paste0(target_min, "-", target_max),
+    target_range = ifelse(is.na(target_min), "N/A", target_range)
+  ) %>%
+  select(hcwType, patientLocation, total_visits, num_hcws, visits_per_hcw_per_day, target_range)
+
+# Display as formatted table
+knitr::kable(table1,
+  col.names = c("HCW Type", "Location", "Total Visits", "# HCWs",
+                "Sim Visits/Day", "Target Range (visits/day)"),
+  caption = "Average Patient Room Visit Frequency per 24 Hours")
+```
+
+---
+
