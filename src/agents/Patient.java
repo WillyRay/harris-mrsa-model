@@ -1,13 +1,22 @@
 package agents;
 
+import processes.disease.AgentDisease;
+import processes.disease.DiseaseStates;
+
 public class Patient extends Agent {
     
     private double admitTime, dischargeTime, transferTime;
     private String admitLocation, dischargeLocation,currentLocation;
     private boolean needsRt, needsOt, needsPt; 
+    private AgentDisease agentDisease;
     
     public Patient() {
 	super();
+	this.agentDisease = new AgentDisease(this);	
+    }
+    
+    public DiseaseStates getDiseaseState() {
+	return this.agentDisease.getDiseaseState();
     }
 
     public double getAdmitTime() {
@@ -80,6 +89,10 @@ public class Patient extends Agent {
 
     public void setCurrentLocation(String currentLocation) {
         this.currentLocation = currentLocation;
+    }
+
+    public AgentDisease getAgentDisease() {
+	return this.agentDisease;
     }
     
     

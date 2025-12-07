@@ -4,7 +4,9 @@ import containers.Hospital;
 import repast.simphony.space.graph.Network;
 
 public class Nurse extends HealthCareWorker {
+    
 
+    
     public Nurse(HcwType hcwtype, Hospital hospital) {
 	super(hcwtype, hospital);
 	// TODO Auto-generated constructor stub
@@ -18,7 +20,8 @@ public class Nurse extends HealthCareWorker {
 	if (hospitalNet.getDegree(this) > 0) {
 	    Object po = hospitalNet.getRandomAdjacent(this);
 	    Patient p = (Patient) po;
-	    super.hospital.visitData.append(this.getAgentId() + "," + this.TYPE.toString() + "," + p.getAgentId() + "," + p.getCurrentLocation() + "," + utils.TimeUtils.getSchedule().getTickCount() + "\n");
+	    boolean checkVisit = super.checkVisitForTransmission(p);
+	    super.hospital.visitData.append(this.getAgentId() + "," + this.TYPE.toString() + "," + this.isContaminated() + "," + p.getAgentId() + "," + p.getDiseaseState() + "," + p.getCurrentLocation() + "," + utils.TimeUtils.getSchedule().getTickCount() + "\n");
 	
     }
     }

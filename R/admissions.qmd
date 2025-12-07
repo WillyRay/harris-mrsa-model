@@ -1,0 +1,97 @@
+---
+title: "Admissions Analysis"
+format: pdf
+code-fold: true
+---
+
+# Admissions Analysis
+
+## Data Loading and Validation
+
+```{r setup, message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(knitr)
+
+# Read data
+admissions_df <- read.table("../admission_data.txt",
+                            header = TRUE,
+                            sep = ",",
+                            stringsAsFactors = FALSE)
+
+# Validate required columns
+required_cols <- c("admitTime", "icuAdmit", "importation")
+if (!all(required_cols %in% names(admissions_df))) {
+  stop("Missing required columns in admission_data.txt. Expected: ",
+       paste(required_cols, collapse = ", "))
+}
+
+# Validate non-empty
+if (nrow(admissions_df) == 0) {
+  stop("No admission data found in admission_data.txt")
+}
+
+# Convert string booleans to logical
+admissions_df <- admissions_df %>%
+  mutate(
+    icuAdmit = tolower(as.character(icuAdmit)) == "true",
+    importation = tolower(as.character(importation)) == "true"
+  )
+
+# Preview
+head(admissions_df)
+```
+
+## Summary Statistics
+
+```{r calculate-metrics}
+# Calculate metrics once
+n_total <- nrow(admissions_df)
+n_icu <- sum(admissions_df$icuAdmit)
+n_ward <- n_total - n_icu
+max_time <- max(admissions_df$admitTime, na.rm = TRUE)
+
+# Prevent division by zero
+if (max_time == 0) {
+  warning("Maximum admit time is 0, setting to 1 for calculations")
+  max_time <- 1
+}
+
+# Admission counts table
+admission_table <- data.frame(
+  Category = c("Total", "ICU", "Ward"),
+  Admissions = c(n_total, n_icu, n_ward),
+  Mean_Daily = round(c(n_total, n_icu, n_ward) / max_time, 2)
+)
+
+kable(admission_table,
+      col.names = c("Category", "Admissions", "Mean Daily"),
+      caption = "Admission Counts Summary")
+```
+
+**ICU admission percentage:** `r round(100 * n_icu / n_total, 1)`%
+
+**Simulation duration:** `r round(max_time, 1)` days
+
+## Importation Analysis
+
+```{r importation}
+# Calculate importation rates by location
+import_table <- admissions_df %>%
+  group_by(Location = ifelse(icuAdmit, "ICU", "Ward")) %>%
+  summarise(
+    N_Admissions = n(),
+    N_Importations = sum(importation),
+    Pct_Importation = round(100 * mean(importation), 1),
+    .groups = "drop"
+  )
+
+kable(import_table,
+      col.names = c("Location", "N Admissions", "N Importations", "% Importation"),
+      caption = "Importation by Admission Location")
+```
+
+
+```{r session-info}
+sessionInfo()
+```

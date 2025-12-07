@@ -18,7 +18,8 @@ public class Doctor extends HealthCareWorker {
 	if (hospitalNet.getDegree(this) > 0) {
 	    Object po = hospitalNet.getRandomAdjacent(this);
 	    Patient p = (Patient) po;
-	    super.hospital.visitData.append(this.getAgentId() + "," + this.TYPE.toString() + "," + p.getAgentId() + "," + p.getCurrentLocation() + "," + utils.TimeUtils.getSchedule().getTickCount() + "\n");
+	    boolean checkVisit = super.checkVisitForTransmission(p);
+	    super.hospital.visitData.append(this.getAgentId() + "," + this.TYPE.toString() + "," + this.isContaminated() + "," + p.getAgentId() + "," + p.getDiseaseState() + "," + p.getCurrentLocation() + "," + utils.TimeUtils.getSchedule().getTickCount() + "\n");
 	
     }
     

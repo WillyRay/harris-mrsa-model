@@ -25,8 +25,8 @@ public class Therapist extends HealthCareWorker {
 	if (needsArray.size() > 0) {
 	   Patient p = (Patient)Chooser.chooseOne(needsArray);
 	   needsArray.remove(p);
-	   String row = this.getAgentId() + "," + this.TYPE.toString() + "," + p.getAgentId() + "," + p.getCurrentLocation() + "," + TimeUtils.getSchedule().getTickCount() + '\n';
-	   hospital.visitData.append(row);
+	   boolean checkVisit = super.checkVisitForTransmission(p);
+	   String row = this.getAgentId() + "," + this.TYPE.toString() + "," + this.isContaminated() + "," + p.getAgentId() + "," + p.getDiseaseState()  + "," + p.getCurrentLocation() + "," + TimeUtils.getSchedule().getTickCount() + '\n';	   hospital.visitData.append(row);
 	}
     }
 }

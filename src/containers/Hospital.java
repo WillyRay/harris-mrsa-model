@@ -25,7 +25,7 @@ import utils.Chooser;
 import utils.TimeUtils;
 
 public class Hospital extends DefaultContext<Agent> {
-    Builder builder;
+    public Builder builder;
 
     ArrayList<Patient> patients;
     ArrayList<HealthCareWorker> hcws;
@@ -49,6 +49,7 @@ public class Hospital extends DefaultContext<Agent> {
     public Context<Agent> icuContext;
     
     public StringBuffer visitData;
+    public StringBuffer admissionData;
 
     public Hospital(Builder builder, int bedCount, int icuBedCount) {
 	super();
@@ -56,8 +57,10 @@ public class Hospital extends DefaultContext<Agent> {
 	this.wardContext = builder.getWardContext();
 	this.icuContext = builder.getIcuContext();
 	this.visitData = new StringBuffer();
-	visitData.append("hcwId,hcwType,patientId,patientLocation,visitTime\n");
-	
+	visitData.append("hcwId,hcwType,hcwDiseaseState,patientId,patientDiseaseState,patientLocation,visitTime\n");
+	this.admissionData = new StringBuffer();
+	this.admissionData.append("patientId,admitTime,icuAdmit,importation\n");
+
 	
 	this.dischargedPatients = new ArrayList<DischargedPatient>();
 	this.patients = new ArrayList<Patient>();
@@ -85,12 +88,17 @@ public class Hospital extends DefaultContext<Agent> {
 	if (patients.size() < bedCount) {
 	    Patient p = new Patient();
 	    this.add(p);
-	    builder.getChooser();
-	    if (Chooser.randomTrue(builder.getIcuAdmitProbability())
+	    	    if (Chooser.randomTrue(builder.getIcuAdmitProbability())
 		    && inIcu.size() < icuBedCount) {
-
-
-		patients.add(p);
+	    	
+	    	if (Chooser.randomTrue(builder.getAdmitImportationInfectionProbabilityICU())) {
+	    	    p.getAgentDisease().setDiseaseState(processes.disease.DiseaseStates.INFECTED);
+	    	    p.getAgentDisease().setImported(true);
+	    	    p.getAgentDisease().setDateInfected(TimeUtils.getSchedule().getTickCount());
+	    	    p.getAgentDisease().start();
+	    	}
+	    	    
+	    	patients.add(p);
 		p.setAdmitLocation("ICU");
 		p.setCurrentLocation("ICU");
 		inIcu.add(p);
@@ -104,8 +112,16 @@ public class Hospital extends DefaultContext<Agent> {
 		p.setCurrentLocation("ICU");
 		p.setAdmitTime(TimeUtils.getSchedule().getTickCount());
 		this.icuContext.add(p);
+		this.admissionData.append(p.getAgentId() + "," + p.getAdmitTime() + "," + true + "," + p.getAgentDisease().isImported() + "\n");
 	    } else {
-
+		
+		if (Chooser.randomTrue(builder.getAdmitImportationInfectionProbability())) {
+	    	    p.getAgentDisease().setDiseaseState(processes.disease.DiseaseStates.INFECTED);
+	    	    p.getAgentDisease().setImported(true);
+	    	    p.getAgentDisease().setDateInfected(TimeUtils.getSchedule().getTickCount());
+	    	    p.getAgentDisease().start();
+	    	}
+		
 		patients.add(p);
 		p.setAdmitLocation("Ward");
 		p.setCurrentLocation("Ward");
@@ -117,6 +133,7 @@ public class Hospital extends DefaultContext<Agent> {
 		p.setNeedsPt(Chooser.randomTrue(builder.getNeedsPt()));
 		p.setAdmitTime(TimeUtils.getSchedule().getTickCount());   
 		this.wardContext.add(p);
+		this.admissionData.append(p.getAgentId() + "," + p.getAdmitTime() + "," + false + "," + p.getAgentDisease().isImported() + "\n");
 	    }
 	  
 	    if (p.isNeedsOt()) {

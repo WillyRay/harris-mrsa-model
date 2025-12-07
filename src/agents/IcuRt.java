@@ -25,7 +25,8 @@ public class IcuRt extends HealthCareWorker {
 	    if (po.isEmpty()) return;
 	    
 	    Patient p = (Patient) utils.Chooser.chooseOne(po);
-	    super.hospital.visitData.append(this.getAgentId() + "," + this.TYPE.toString() + "," + p.getAgentId() + "," + p.getCurrentLocation() + "," + utils.TimeUtils.getSchedule().getTickCount() + "\n");
+	    boolean checkVisit = super.checkVisitForTransmission(p);
+	    super.hospital.visitData.append(this.getAgentId() + "," + this.TYPE.toString() + "," + this.isContaminated() + "," + p.getAgentId() + "," + p.getDiseaseState() + "," + p.getCurrentLocation() + "," + utils.TimeUtils.getSchedule().getTickCount() + "\n");
 	
     
     
