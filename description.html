@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.24">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>description</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="description_files/libs/clipboard/clipboard.min.js"></script>
+<script src="description_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="description_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="description_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="description_files/libs/quarto-html/popper.min.js"></script>
+<script src="description_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="description_files/libs/quarto-html/anchor.min.js"></script>
+<link href="description_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="description_files/libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="description_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="description_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="description_files/libs/bootstrap/bootstrap-9e3ffae467580fdb927a41352e75a2e0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="harris-mrsa-model---comprehensive-description" class="level1">
+<h1>Harris MRSA Model - Comprehensive Description</h1>
+<section id="overview" class="level2">
+<h2 class="anchored" data-anchor-id="overview">Overview</h2>
+<p>This is an Agent-Based Model (ABM) simulating MRSA transmission dynamics in a hospital setting. The model tracks patient admissions, discharges, transfers between ICU and ward, healthcare worker (HCW) visits to patients, and potential disease transmission during these interactions.</p>
+</section>
+<section id="model-entry-point-and-initialization" class="level2">
+<h2 class="anchored" data-anchor-id="model-entry-point-and-initialization">Model Entry Point and Initialization</h2>
+<section id="builder.build---the-main-entry-point" class="level3">
+<h3 class="anchored" data-anchor-id="builder.build---the-main-entry-point">Builder.build() - The Main Entry Point</h3>
+<p>The simulation begins when Repast Simphony calls <code>Builder.build(Context&lt;Object&gt; context)</code> (Builder.java:190). This method orchestrates the entire initialization process.</p>
+<p><strong>Step-by-step initialization:</strong></p>
+<ol type="1">
+<li><p><strong>Get the Simulation Schedule</strong> (line 197)</p>
+<ul>
+<li>Retrieves the Repast Simphony schedule that manages all time-based events</li>
+<li>The schedule uses “ticks” as time units, where 1 tick = 1 day</li>
+</ul></li>
+<li><p><strong>Create the Hospital</strong> (line 200)</p>
+<ul>
+<li>Creates the main <code>Hospital</code> object with configured capacity</li>
+<li>Hospital capacity: 120 beds total (configurable via <code>hospitalCapacity</code>)</li>
+<li>ICU capacity: 20 beds (configurable via <code>icuCapacity</code>)</li>
+<li>Ward capacity: 100 beds (hospitalCapacity - icuCapacity)</li>
+<li>The Hospital is added to the simulation context</li>
+</ul></li>
+<li><p><strong>Initialize Hospital Internal State</strong> (Hospital.java:54-83) During Hospital construction, the following are initialized:</p>
+<ul>
+<li><strong>Patient tracking lists:</strong>
+<ul>
+<li><code>patients</code> - all patients in the hospital</li>
+<li><code>inIcu</code> - patients currently in ICU</li>
+<li><code>notInIcu</code> - patients currently in ward</li>
+<li><code>patientsNeedingOt/Pt/Rt</code> - patients requiring therapy visits</li>
+</ul></li>
+<li><strong>Discharge processes:</strong>
+<ul>
+<li><code>icuDischarger</code> - handles ICU patient discharges using LogNormal(scale=0.820, shape=0.916)</li>
+<li><code>nonIcuDischarger</code> - handles ward patient discharges using LogNormal(scale=0.768, shape=1.253)</li>
+</ul></li>
+<li><strong>Transfer process:</strong>
+<ul>
+<li><code>transferer</code> - handles ICU-to-Ward transfers using LogNormal(scale=1.0, shape=0.5)</li>
+</ul></li>
+<li><strong>Data collection buffers:</strong>
+<ul>
+<li><code>visitData</code> - StringBuffer accumulating all HCW visit records</li>
+<li><code>admissionData</code> - StringBuffer accumulating all admission records</li>
+<li><code>dischargedPatients</code> - ArrayList storing DischargedPatient records</li>
+</ul></li>
+<li><strong>Network for HCW-Patient assignments:</strong>
+<ul>
+<li><code>hospitalnet</code> - network tracking which HCWs are assigned to which patients</li>
+</ul></li>
+</ul></li>
+<li><p><strong>Start the Admission Process</strong> (Builder.java:202-203)</p>
+<ul>
+<li>Creates an <code>Admission</code> process with mean inter-arrival time of 0.05 days</li>
+<li>The admission process uses an Exponential distribution</li>
+<li><code>admissionProcess.start()</code> schedules the first admission event</li>
+</ul></li>
+<li><p><strong>Schedule the Builder’s Recurring Methods</strong> (line 204)</p>
+<ul>
+<li>Schedules <code>Builder.daily()</code> to run every 1.0 tick starting at tick 1.0</li>
+<li>Schedules <code>Builder.perShiftOperations()</code> to run every 0.5 ticks starting at tick 0.5</li>
+<li>Schedules <code>Builder.endOfRun()</code> to run once at tick 365</li>
+</ul></li>
+<li><p><strong>Build All Healthcare Workers</strong> (line 207)</p>
+<ul>
+<li>Calls <code>buildHealthCareWorkers()</code> to create the HCW workforce</li>
+</ul></li>
+<li><p><strong>Create Networks</strong> (lines 211-214)</p>
+<ul>
+<li>Creates two network structures for visualization/analysis (ICU and wards)</li>
+</ul></li>
+</ol>
+</section>
+</section>
+<section id="healthcare-worker-creation" class="level2">
+<h2 class="anchored" data-anchor-id="healthcare-worker-creation">Healthcare Worker Creation</h2>
+<p>The <code>buildHealthCareWorkers()</code> method (Builder.java:221-332) creates all HCWs and assigns each a PatientVisit process:</p>
+<section id="ward-doctors-lines-223-236" class="level3">
+<h3 class="anchored" data-anchor-id="ward-doctors-lines-223-236">Ward Doctors (lines 223-236)</h3>
+<ul>
+<li><strong>Count:</strong> (hospitalCapacity - icuCapacity) × physiciansPerPatient = 100 × 0.2 = 20 doctors</li>
+<li><strong>Type:</strong> DOCTOR</li>
+<li><strong>Visit pattern:</strong> Each doctor gets a PatientVisit process that:
+<ul>
+<li>Uses Gamma(shape=0.52, scale=90.7) distribution for inter-visit intervals (in minutes)</li>
+<li>Adds 6.6 minutes for room visit duration</li>
+<li>Starts immediately with <code>pv.start()</code></li>
+</ul></li>
+<li><strong>Infection control attributes:</strong>
+<ul>
+<li>Hand hygiene compliance (pre-visit): 0.5</li>
+<li>Hand hygiene compliance (post-visit): 0.5</li>
+<li>PPE/glove compliance: 0.5</li>
+</ul></li>
+<li><strong>Assignment:</strong> Added to <code>wardContext</code> with <code>icu=false</code></li>
+</ul>
+</section>
+<section id="icu-doctors-lines-238-251" class="level3">
+<h3 class="anchored" data-anchor-id="icu-doctors-lines-238-251">ICU Doctors (lines 238-251)</h3>
+<ul>
+<li><strong>Count:</strong> icuCapacity × icuPhysiciansPerPatient = 20 × 0.3 = 6 doctors</li>
+<li><strong>Type:</strong> DOCTOR</li>
+<li><strong>Visit pattern:</strong>
+<ul>
+<li>Uses Gamma(shape=0.52, scale=35.3) distribution (shorter intervals than ward)</li>
+<li>Starts immediately</li>
+</ul></li>
+<li><strong>Assignment:</strong> Added to <code>icuContext</code> with <code>icu=true</code></li>
+</ul>
+</section>
+<section id="ward-nurses-lines-253-265" class="level3">
+<h3 class="anchored" data-anchor-id="ward-nurses-lines-253-265">Ward Nurses (lines 253-265)</h3>
+<ul>
+<li><strong>Count:</strong> (hospitalCapacity - icuCapacity) × nursesPerPatient = 100 × 0.2 = 20 nurses</li>
+<li><strong>Type:</strong> NURSE</li>
+<li><strong>Visit pattern:</strong>
+<ul>
+<li>Uses Gamma(shape=0.54, scale=55.1) distribution</li>
+<li>Starts immediately</li>
+</ul></li>
+<li><strong>Assignment:</strong> Added to <code>wardContext</code> with <code>icu=false</code></li>
+</ul>
+</section>
+<section id="icu-nurses-lines-267-279" class="level3">
+<h3 class="anchored" data-anchor-id="icu-nurses-lines-267-279">ICU Nurses (lines 267-279)</h3>
+<ul>
+<li><strong>Count:</strong> icuCapacity × icuNursesPerPatient = 20 × 0.5 = 10 nurses</li>
+<li><strong>Type:</strong> NURSE</li>
+<li><strong>Visit pattern:</strong>
+<ul>
+<li>Uses Gamma(shape=0.54, scale=20) distribution (much more frequent visits)</li>
+<li>Visit check interval: 1/3 day (8 hours)</li>
+</ul></li>
+<li><strong>Assignment:</strong> Added to <code>icuContext</code> with <code>icu=true</code></li>
+</ul>
+</section>
+<section id="icu-respiratory-therapists-lines-281-294" class="level3">
+<h3 class="anchored" data-anchor-id="icu-respiratory-therapists-lines-281-294">ICU Respiratory Therapists (lines 281-294)</h3>
+<ul>
+<li><strong>Count:</strong> icuCapacity × icuRtsPerPatient = 20 × 0.1 = 2 ICU RTs</li>
+<li><strong>Type:</strong> ICURT</li>
+<li><strong>Visit pattern:</strong>
+<ul>
+<li>Uses Gamma(shape=0.54, scale=20) distribution</li>
+<li>Visit check interval: 1/3 day</li>
+</ul></li>
+<li><strong>Assignment:</strong> Added to <code>icuContext</code> with <code>icu=true</code></li>
+</ul>
+</section>
+<section id="ward-therapists-lines-298-331" class="level3">
+<h3 class="anchored" data-anchor-id="ward-therapists-lines-298-331">Ward Therapists (lines 298-331)</h3>
+<p>All three types (RT, PT, OT) currently have staffing ratios set to 0.1 (default), so: - <strong>Respiratory Therapists (RT):</strong> hospitalCapacity × 0.1 = 12 RTs - <strong>Physical Therapists (PT):</strong> hospitalCapacity × 0.1 = 12 PTs - <strong>Occupational Therapists (OT):</strong> hospitalCapacity × 0.1 = 12 OTs</p>
+<p><strong>Key difference for therapists:</strong> - They visit patients from specific “needs” lists: <code>hospital.patientsNeedingRt/Pt/Ot</code> - Visit pattern: Gamma(shape=0.62, scale=61.7) distribution</p>
+</section>
+</section>
+<section id="simulation-execution---the-event-loop" class="level2">
+<h2 class="anchored" data-anchor-id="simulation-execution---the-event-loop">Simulation Execution - The Event Loop</h2>
+<p>Once initialization completes, the Repast Simphony scheduler begins executing events. The simulation runs for 365 ticks (days).</p>
+<section id="recurring-scheduled-events" class="level3">
+<h3 class="anchored" data-anchor-id="recurring-scheduled-events">Recurring Scheduled Events</h3>
+<section id="builder.pershiftoperations---every-0.5-ticks-builder.java136-139" class="level4">
+<h4 class="anchored" data-anchor-id="builder.pershiftoperations---every-0.5-ticks-builder.java136-139">1. Builder.perShiftOperations() - Every 0.5 Ticks (Builder.java:136-139)</h4>
+<p><strong>When:</strong> Runs at ticks 0.5, 1.0, 1.5, 2.0, etc. (twice per day, representing shift changes)</p>
+<p><strong>What it does:</strong> - Calls <code>hospital.setPatientNurseAssignments()</code> to reassign nurses to patients</p>
+<p><strong>Nurse Assignment Algorithm (Hospital.java:205-296):</strong></p>
+<ol type="1">
+<li><p><strong>Clear all existing nurse-patient assignments</strong> (lines 206-223)</p>
+<ul>
+<li>Removes all edges in the hospital network between nurses and patients</li>
+<li>Doctor-patient assignments remain intact</li>
+</ul></li>
+<li><p><strong>For each patient in the hospital</strong> (line 225):</p>
+<ol type="a">
+<li><strong>Get appropriate nurse pool</strong> (lines 229-239)
+<ul>
+<li>If patient is in Ward: get all ward nurses from <code>wardContext</code></li>
+<li>If patient is in ICU: get all ICU nurses from <code>icuContext</code></li>
+</ul></li>
+<li><strong>Sort nurses by current workload</strong> (line 246)
+<ul>
+<li>Nurses are sorted by their network degree (number of assigned patients)</li>
+<li>This implements load balancing</li>
+</ul></li>
+<li><strong>Find nurses with minimum workload</strong> (lines 248-254)
+<ul>
+<li>Find the minimum degree among available nurses</li>
+<li>Create list of all nurses tied for minimum degree</li>
+</ul></li>
+<li><strong>Assign two nurses to the patient</strong> (lines 256-293)
+<ul>
+<li>If 2+ nurses tied for minimum: randomly select 2</li>
+<li>If only 1 nurse at minimum: assign that nurse, then find next-lowest workload nurse</li>
+<li>Creates edges in <code>hospitalnet</code> connecting nurses to patient</li>
+<li>Ensures each patient has 2 nurse assignments (when possible)</li>
+</ul></li>
+</ol></li>
+</ol>
+</section>
+<section id="builder.daily---every-1.0-tick-builder.java132-135" class="level4">
+<h4 class="anchored" data-anchor-id="builder.daily---every-1.0-tick-builder.java132-135">2. Builder.daily() - Every 1.0 Tick (Builder.java:132-135)</h4>
+<p><strong>When:</strong> Runs at ticks 1.0, 2.0, 3.0, etc. (once per day)</p>
+<p><strong>What it does:</strong> - Calls <code>hospital.resetTherapyNeeds()</code> to refresh therapy assignment lists</p>
+<p><strong>Therapy Needs Reset (Hospital.java:331-354):</strong></p>
+<ol type="1">
+<li><strong>Clear existing therapy lists</strong> (lines 332-341)
+<ul>
+<li><code>patientsNeedingOt.clear()</code></li>
+<li><code>patientsNeedingPt.clear()</code></li>
+<li><code>patientsNeedingRt.clear()</code></li>
+</ul></li>
+<li><strong>Rebuild therapy lists from current patient population</strong> (lines 343-353)
+<ul>
+<li>Loop through all current patients</li>
+<li>If <code>patient.needsOt</code> is true, add to <code>patientsNeedingOt</code></li>
+<li>If <code>patient.needsPt</code> is true, add to <code>patientsNeedingPt</code></li>
+<li>If <code>patient.needsRt</code> is true, add to <code>patientsNeedingRt</code></li>
+</ul></li>
+</ol>
+<p><strong>Why daily reset?</strong> Ensures therapy assignment lists stay synchronized with current patient population, removing discharged patients and adding newly transferred patients.</p>
+</section>
+</section>
+<section id="stochastic-event-processes" class="level3">
+<h3 class="anchored" data-anchor-id="stochastic-event-processes">Stochastic Event Processes</h3>
+<p>In addition to the regular scheduled methods, several stochastic processes fire at random intervals:</p>
+<section id="admission-process-admission.java" class="level4">
+<h4 class="anchored" data-anchor-id="admission-process-admission.java">3. Admission Process (Admission.java)</h4>
+<p><strong>Frequency:</strong> Exponential(0.05) distribution - mean of 0.05 days (~72 minutes) between admissions</p>
+<p><strong>Process flow:</strong></p>
+<ol type="1">
+<li><p><strong>Fire event</strong> (Admission.java:37-41)</p>
+<ul>
+<li>Increments total admissions counter</li>
+<li>Calls <code>hospital.createAndAdmitPatient()</code></li>
+<li>Reschedules itself for next admission</li>
+</ul></li>
+<li><p><strong>Create and Admit Patient</strong> (Hospital.java:87-152)</p>
+<p><strong>Capacity check</strong> (line 88)</p>
+<ul>
+<li>Only admit if <code>patients.size() &lt; bedCount</code> (120)</li>
+</ul>
+<p><strong>Patient creation</strong> (line 89)</p>
+<ul>
+<li>Create new <code>Patient()</code> object</li>
+<li>Patient gets unique <code>agentId</code> from Agent base class</li>
+<li>Patient gets new <code>AgentDisease</code> object tracking disease state</li>
+</ul>
+<p><strong>ICU vs Ward admission</strong> (line 91-92)</p>
+<ul>
+<li>Random draw: probability <code>icuAdmitProbability</code> (0.15)</li>
+<li>Additional check for ICU: ICU must have available beds (<code>inIcu.size() &lt; icuBedCount</code>)</li>
+<li><strong>Default:</strong> 85% of admissions go to Ward</li>
+</ul>
+<p><strong>If admitted to Ward</strong> (lines 116-137):</p>
+<ol type="a">
+<li><strong>Disease importation check</strong> (lines 118-123)
+<ul>
+<li>Probability <code>admitImportationInfectionProbability</code> (0.01)</li>
+<li>If true: patient starts with INFECTED disease state</li>
+<li>Mark as imported, record infection date, start disease process</li>
+</ul></li>
+<li><strong>Update patient attributes</strong> (lines 125-135)
+<ul>
+<li>Add to tracking lists: <code>patients</code>, <code>notInIcu</code></li>
+<li>Set location: <code>admitLocation="Ward"</code>, <code>currentLocation="Ward"</code></li>
+<li>Set admission time to current tick</li>
+<li>Mark <code>icuAdmit=false</code> attribute</li>
+</ul></li>
+<li><strong>Schedule discharge</strong> (line 130)
+<ul>
+<li><code>nonIcuDischarger.scheduleDischarge(p)</code> creates one-time event</li>
+<li>Time drawn from LogNormal(scale=0.768, shape=1.253)</li>
+<li>Schedules call to <code>hospital.dischargePatient(p)</code></li>
+</ul></li>
+<li><strong>Assign therapy needs</strong> (lines 131-133)
+<ul>
+<li>Randomly assign based on probabilities:
+<ul>
+<li><code>needsOt</code>: probability <code>needsOt</code> (0.1)</li>
+<li><code>needsRt</code>: probability <code>needsRt</code> (0.1)</li>
+<li><code>needsPt</code>: probability <code>needsPt</code> (0.1)</li>
+</ul></li>
+</ul></li>
+<li><strong>Add to ward context</strong> (line 135)
+<ul>
+<li>Add patient to <code>wardContext</code> for ward-specific operations</li>
+</ul></li>
+<li><strong>Record admission</strong> (line 136)
+<ul>
+<li>Append to <code>admissionData</code>: patientId, admitTime, icuAdmit=false, importation status</li>
+</ul></li>
+</ol>
+<p><strong>If admitted to ICU</strong> (lines 94-115):</p>
+<p>Process differs from Ward admission in these ways:</p>
+<ol type="a">
+<li><strong>Disease importation</strong> (lines 94-99)
+<ul>
+<li>Uses <code>admitImportationInfectionProbabilityICU</code> (0.01) - same probability as ward</li>
+</ul></li>
+<li><strong>Tracking lists and location</strong> (lines 101-113)
+<ul>
+<li>Added to <code>inIcu</code> list instead of <code>notInIcu</code></li>
+<li>Location set to “ICU” instead of “Ward”</li>
+<li>Mark <code>icuAdmit=true</code> attribute</li>
+</ul></li>
+<li><strong>Discharge schedule</strong> (line 105)
+<ul>
+<li>Uses <code>icuDischarger</code> with different distribution: LogNormal(scale=0.820, shape=0.916)</li>
+</ul></li>
+<li><strong>Additional: Schedule potential transfer</strong> (line 106)
+<ul>
+<li><strong>Key difference:</strong> ICU patients get a transfer event scheduled</li>
+<li><code>transferer.scheduleTransfer(p)</code> creates one-time event</li>
+<li>Time drawn from LogNormal(scale=1.0, shape=0.5)</li>
+<li>Schedules call to <code>hospital.transferPatient(p)</code></li>
+<li>Note: Both transfer and discharge are scheduled; whichever fires first will execute</li>
+</ul></li>
+<li><strong>Therapy needs</strong> (lines 108-110)
+<ul>
+<li>Different probabilities than ward:
+<ul>
+<li><code>needsOt</code>: probability <code>needsOtIcu</code> (0.1) - same as ward</li>
+<li><code>needsRt</code>: probability <code>needsRtIcu</code> (1.0) - <strong>ALL ICU patients need RT</strong></li>
+<li><code>needsPt</code>: probability <code>needsPtIcu</code> (0.1) - same as ward</li>
+</ul></li>
+</ul></li>
+<li><strong>Context assignment</strong> (line 114)
+<ul>
+<li>Added to <code>icuContext</code> instead of <code>wardContext</code></li>
+</ul></li>
+</ol>
+<p><strong>Add to therapy lists if needed</strong> (lines 139-147)</p>
+<ul>
+<li>If patient needs OT: add to <code>patientsNeedingOt</code></li>
+<li>If patient needs PT: add to <code>patientsNeedingPt</code></li>
+<li>If patient needs RT: add to <code>patientsNeedingRt</code></li>
+</ul>
+<p><strong>Assign doctor</strong> (line 148)</p>
+<ul>
+<li>Calls <code>setPatientDoctorAssignments(p)</code></li>
+<li>Uses similar load-balancing algorithm as nurse assignment</li>
+<li>Finds doctor (from appropriate context) with fewest current patients</li>
+<li>Adds edge in <code>hospitalnet</code> connecting doctor to patient</li>
+<li>Doctor assignment persists until patient discharge (unlike nurses who reassign every shift)</li>
+</ul></li>
+</ol>
+</section>
+<section id="patientvisit-process-patientvisit.java" class="level4">
+<h4 class="anchored" data-anchor-id="patientvisit-process-patientvisit.java">4. PatientVisit Process (PatientVisit.java)</h4>
+<p><strong>One process instance per HCW</strong> - Each doctor, nurse, and therapist has their own visit process</p>
+<p><strong>Frequency:</strong> Varies by HCW type and location, using Gamma distributions</p>
+<p><strong>Process flow:</strong></p>
+<ol type="1">
+<li><p><strong>Start</strong> (PatientVisit.java:35-41)</p>
+<ul>
+<li>Calculate next event time from distribution</li>
+<li>Schedule one-time event to call <code>fire()</code></li>
+</ul></li>
+<li><p><strong>Fire</strong> (lines 44-47)</p>
+<ul>
+<li>Calls <code>hcw.makeAVisit()</code></li>
+<li>Reschedules itself with <code>start()</code> - creating continuous loop</li>
+</ul></li>
+<li><p><strong>Next Event Time Calculation</strong> (lines 55-60)</p>
+<ul>
+<li>Sample from HCW-specific Gamma distribution (in minutes)</li>
+<li>Add fixed room visit duration: 6.6 minutes</li>
+<li>Convert to days: multiply by <code>TimeUtils.MINUTE</code> constant</li>
+<li>Return: currentTime + elapsedTime</li>
+</ul></li>
+<li><p><strong>Make a Visit</strong> - Implementation varies by HCW type</p>
+<p>The base class <code>HealthCareWorker.makeAVisit()</code> (HealthCareWorker.java:72-82) is overridden in each subclass:</p>
+<p><strong>Doctors</strong> (Doctor.java:14-27):</p>
+<ul>
+<li>Get the <code>hospitalnet</code> network from hospital</li>
+<li>Check if doctor has any assigned patients (<code>getDegree(this) &gt; 0</code>)</li>
+<li>If yes: select random patient from those connected to this doctor (<code>getRandomAdjacent(this)</code>)</li>
+<li><strong>Key point:</strong> Doctors only visit their ASSIGNED patients (assigned at patient admission)</li>
+<li>Check for transmission</li>
+<li>Record visit to <code>hospital.visitData</code></li>
+</ul>
+<p><strong>Nurses</strong> (Nurse.java:16-27):</p>
+<ul>
+<li>Identical logic to doctors</li>
+<li>Get <code>hospitalnet</code> network</li>
+<li>Check if nurse has assigned patients</li>
+<li>Select random patient from those connected to this nurse</li>
+<li><strong>Key point:</strong> Nurses only visit their ASSIGNED patients (assigned every 0.5 ticks at shift change)</li>
+<li>Check for transmission</li>
+<li>Record visit</li>
+</ul>
+<p><strong>Therapists (RT/PT/OT)</strong> (Therapist.java:24-31):</p>
+<ul>
+<li>Check if <code>needsArray</code> has any patients (size &gt; 0)</li>
+<li><code>needsArray</code> is set to <code>hospital.patientsNeedingOt/Pt/Rt</code> for each therapist type</li>
+<li>Select random patient from the needs list</li>
+<li><strong>REMOVE patient from needs list</strong> after selection (line 27)</li>
+<li><strong>Key point:</strong> Each patient is visited at most once per day by each therapist type</li>
+<li>The needs list is repopulated daily by <code>Builder.daily()</code> → <code>hospital.resetTherapyNeeds()</code></li>
+<li>Check for transmission</li>
+<li>Record visit</li>
+</ul>
+<p><strong>ICU Respiratory Therapists (IcuRt)</strong> (IcuRt.java:17-34):</p>
+<ul>
+<li>Get list of all current ICU patients (<code>hospital.inIcu</code>)</li>
+<li>If list is empty, return (no visit)</li>
+<li>Select random patient from ALL ICU patients (not using assignment network)</li>
+<li><strong>Key point:</strong> ICU RTs can visit any ICU patient, not limited to assigned patients</li>
+<li>Check for transmission</li>
+<li>Record visit</li>
+</ul>
+<p><strong>Transmission check</strong> (HealthCareWorker.java:34-56):</p>
+<ul>
+<li>Logic for all HCW types:
+<ul>
+<li>If HCW not contaminated AND patient not colonized/infected: no transmission possible</li>
+<li>If HCW contaminated AND patient clean: potential HCW→patient transmission</li>
+<li>If HCW clean AND patient colonized/infected: potential patient→HCW transmission</li>
+<li>If both contaminated/infected: no additional transmission</li>
+</ul></li>
+<li>Note: Actual transmission logic is not fully implemented</li>
+</ul>
+<p><strong>Visit recording</strong> - All HCW types append to <code>hospital.visitData</code>:</p>
+<ul>
+<li>Format: <code>hcwId, hcwType, hcwDiseaseState, patientId, patientDiseaseState, patientLocation, visitTime</code></li>
+<li>Creates comprehensive audit trail of all visits</li>
+</ul></li>
+</ol>
+</section>
+<section id="discharge-process-discharge.java" class="level4">
+<h4 class="anchored" data-anchor-id="discharge-process-discharge.java">5. Discharge Process (Discharge.java)</h4>
+<p><strong>Scheduled individually for each patient upon admission</strong></p>
+<p><strong>Timing:</strong> - ICU patients: LogNormal(scale=0.820, shape=0.916) - Ward patients: LogNormal(scale=0.768, shape=1.253)</p>
+<p><strong>Process flow:</strong></p>
+<ol type="1">
+<li><p><strong>Schedule discharge</strong> (Discharge.java:35-40)</p>
+<ul>
+<li>Called when patient is admitted</li>
+<li>Sample discharge time from distribution</li>
+<li>Schedule one-time event: <code>hospital.dischargePatient(p)</code></li>
+</ul></li>
+<li><p><strong>Discharge patient</strong> (Hospital.java:300-317)</p>
+<p><strong>Collect timing data</strong> (lines 301-302)</p>
+<ul>
+<li>Record admit time and current time for length-of-stay calculation</li>
+</ul>
+<p><strong>Remove from hospital</strong> (lines 307-310)</p>
+<ul>
+<li>Remove from main context</li>
+<li>Remove from <code>patients</code> list</li>
+<li>Remove from <code>inIcu</code> or <code>notInIcu</code> list</li>
+</ul>
+<p><strong>Create discharge record</strong> (lines 313-314)</p>
+<ul>
+<li>Create <code>DischargedPatient</code> object with:
+<ul>
+<li>agentId</li>
+<li>admitTime</li>
+<li>dischargeTime (current tick)</li>
+<li>died flag (always false in current implementation)</li>
+<li>icuAdmit flag (whether admitted to ICU)</li>
+<li>transferTime (if transferred from ICU)</li>
+<li>admitLocation (“ICU” or “Ward”)</li>
+<li>dischargeLocation (current location at discharge)</li>
+</ul></li>
+</ul>
+<p><strong>Store record</strong> (lines 315-316)</p>
+<ul>
+<li>Add to <code>dischargedPatients</code> list</li>
+<li>Add to context (for potential Repast probes/data collection)</li>
+</ul></li>
+</ol>
+</section>
+<section id="transfer-process-transfer.java" class="level4">
+<h4 class="anchored" data-anchor-id="transfer-process-transfer.java">6. Transfer Process (Transfer.java)</h4>
+<p><strong>Scheduled only for ICU-admitted patients</strong></p>
+<p><strong>Timing:</strong> LogNormal(scale=1.0, shape=0.5)</p>
+<p><strong>Process flow:</strong></p>
+<ol type="1">
+<li><p><strong>Schedule transfer</strong> (Transfer.java:33-38)</p>
+<ul>
+<li>Called when patient is admitted to ICU</li>
+<li>Sample transfer time from distribution</li>
+<li>Schedule one-time event: <code>hospital.transferPatient(p)</code></li>
+</ul></li>
+<li><p><strong>Transfer patient</strong> (Hospital.java:154-160)</p>
+<p><strong>Update location lists</strong> (lines 156-157)</p>
+<ul>
+<li>Remove from <code>inIcu</code> list</li>
+<li>Add to <code>notInIcu</code> list</li>
+</ul>
+<p><strong>Update patient state</strong> (lines 158-159)</p>
+<ul>
+<li>Set <code>currentLocation = "Ward"</code></li>
+<li>Record <code>transferTime</code> (current tick)</li>
+</ul>
+<p><strong>Note:</strong> Patient’s original discharge event (scheduled upon ICU admission) is NOT cancelled. If the ICU discharge event fires after transfer, it will still discharge the patient from their current location (Ward).</p></li>
+</ol>
+</section>
+</section>
+</section>
+<section id="model-termination-and-output" class="level2">
+<h2 class="anchored" data-anchor-id="model-termination-and-output">Model Termination and Output</h2>
+<section id="builder.endofrun---at-tick-365-builder.java141-149" class="level3">
+<h3 class="anchored" data-anchor-id="builder.endofrun---at-tick-365-builder.java141-149">Builder.endOfRun() - At Tick 365 (Builder.java:141-149)</h3>
+<p><strong>When:</strong> Single execution at tick 365</p>
+<p><strong>What it does:</strong></p>
+<ol type="1">
+<li><strong>Write output files</strong> (line 145)
+<ul>
+<li>Calls <code>writeSingleRunFiles()</code></li>
+</ul></li>
+<li><strong>End simulation</strong> (line 147)
+<ul>
+<li>Calls <code>RunEnvironment.getInstance().endRun()</code></li>
+<li>Stops the scheduler</li>
+</ul></li>
+</ol>
+</section>
+<section id="output-file-generation-builder.java151-183" class="level3">
+<h3 class="anchored" data-anchor-id="output-file-generation-builder.java151-183">Output File Generation (Builder.java:151-183)</h3>
+<p>The model creates three output files:</p>
+<section id="discharged_patients.txt-lines-154-164" class="level4">
+<h4 class="anchored" data-anchor-id="discharged_patients.txt-lines-154-164">1. discharged_patients.txt (lines 154-164)</h4>
+<p><strong>Format:</strong> CSV with header</p>
+<pre><code>agentId,admitTime,dischargeTime,icuAdmit,transferTime,admitLocation,dischargeLocation</code></pre>
+<p><strong>Content:</strong> - One row per discharged patient - <code>transferTime</code> is 0.0 if patient was never transferred - <code>icuAdmit</code> indicates if patient was initially admitted to ICU - Enables length-of-stay analysis, transfer analysis, ICU vs ward utilization</p>
+<p><strong>Generation:</strong> - Loops through <code>hospital.getDischargedPatients()</code> list - Calls <code>DischargedPatient.toString()</code> for each record</p>
+</section>
+<section id="visit_data.txt-lines-167-172" class="level4">
+<h4 class="anchored" data-anchor-id="visit_data.txt-lines-167-172">2. visit_data.txt (lines 167-172)</h4>
+<p><strong>Format:</strong> CSV with header</p>
+<pre><code>hcwId,hcwType,hcwDiseaseState,patientId,patientDiseaseState,patientLocation,visitTime</code></pre>
+<p><strong>Content:</strong> - One row per HCW visit to a patient - Records disease states of both HCW and patient at time of visit - Includes visit location (ICU or Ward) and exact time - Enables visit pattern analysis, HCW workload analysis, transmission chain reconstruction</p>
+<p><strong>Generation:</strong> - Writes the accumulated <code>hospital.visitData</code> StringBuffer - This buffer is appended to throughout the simulation (HealthCareWorker.java:80)</p>
+</section>
+<section id="admission_data.txt-lines-175-180" class="level4">
+<h4 class="anchored" data-anchor-id="admission_data.txt-lines-175-180">3. admission_data.txt (lines 175-180)</h4>
+<p><strong>Format:</strong> CSV with header</p>
+<pre><code>patientId,admitTime,icuAdmit,importation</code></pre>
+<p><strong>Content:</strong> - One row per patient admission - <code>icuAdmit</code>: true if admitted to ICU, false if admitted to Ward - <code>importation</code>: true if patient arrived with imported MRSA infection - Enables admission pattern analysis and importation tracking</p>
+<p><strong>Generation:</strong> - Writes the accumulated <code>hospital.admissionData</code> StringBuffer - This buffer is appended to during admission (Hospital.java:115, 136)</p>
+</section>
+</section>
+</section>
+<section id="key-model-parameters" class="level2">
+<h2 class="anchored" data-anchor-id="key-model-parameters">Key Model Parameters</h2>
+<p>All parameters are defined in Builder.java (lines 49-125) and accessible via Repast GUI:</p>
+<section id="hospital-structure" class="level3">
+<h3 class="anchored" data-anchor-id="hospital-structure">Hospital Structure</h3>
+<ul>
+<li><code>hospitalCapacity</code> = 120 beds</li>
+<li><code>icuCapacity</code> = 20 beds</li>
+<li>Ward capacity = 100 beds (derived)</li>
+</ul>
+</section>
+<section id="admission-discharge-transfer-adt" class="level3">
+<h3 class="anchored" data-anchor-id="admission-discharge-transfer-adt">Admission-Discharge-Transfer (ADT)</h3>
+<ul>
+<li><code>admissionsRate</code> = 0.05 (mean inter-arrival time in days)</li>
+<li>Ward discharge: LogNormal(scale=0.768, shape=1.253)</li>
+<li>ICU discharge: LogNormal(scale=0.820, shape=0.916)</li>
+<li><code>icuAdmitProbability</code> = 0.15 (15% of admissions go to ICU)</li>
+<li><code>icuTransferProbability</code> = 0.1 (affects transfer timing, not probability)</li>
+<li>ICU→Ward transfer: LogNormal(scale=1.0, shape=0.5)</li>
+</ul>
+</section>
+<section id="therapy-needs" class="level3">
+<h3 class="anchored" data-anchor-id="therapy-needs">Therapy Needs</h3>
+<ul>
+<li><code>needsRt</code> = 0.1 (ward), <code>needsRtIcu</code> = 1.0 (ICU) - respiratory therapy</li>
+<li><code>needsPt</code> = 0.1 (both ICU and ward) - physical therapy</li>
+<li><code>needsOt</code> = 0.1 (both ICU and ward) - occupational therapy</li>
+</ul>
+</section>
+<section id="staffing-ratios-hcws-per-bed" class="level3">
+<h3 class="anchored" data-anchor-id="staffing-ratios-hcws-per-bed">Staffing Ratios (HCWs per bed)</h3>
+<ul>
+<li>Ward nurses: 0.2</li>
+<li>ICU nurses: 0.5</li>
+<li>Ward doctors: 0.2</li>
+<li>ICU doctors: 0.3</li>
+<li>ICU respiratory therapists: 0.1</li>
+<li>Ward therapists (RT/PT/OT): 0.1 each</li>
+</ul>
+</section>
+<section id="hcw-visit-patterns-gamma-distributions-shape-and-scale-parameters" class="level3">
+<h3 class="anchored" data-anchor-id="hcw-visit-patterns-gamma-distributions-shape-and-scale-parameters">HCW Visit Patterns (Gamma distributions, shape and scale parameters)</h3>
+<p>All times in minutes, converted to days via <code>TimeUtils.MINUTE</code></p>
+<p><strong>Ward:</strong> - Nurse visits: Gamma(0.54, 55.1) + 6.6 min room time - Doctor visits: Gamma(0.52, 90.7) + 6.6 min room time - Therapist visits: Gamma(0.62, 61.7) + 6.6 min room time</p>
+<p><strong>ICU:</strong> - Nurse visits: Gamma(0.54, 20) + 6.6 min room time - Doctor visits: Gamma(0.52, 35.3) + 6.6 min room time</p>
+</section>
+<section id="disease-parameters" class="level3">
+<h3 class="anchored" data-anchor-id="disease-parameters">Disease Parameters</h3>
+<ul>
+<li><code>admitImportationInfectionProbability</code> = 0.01 (ward)</li>
+<li><code>admitImportationInfectionProbabilityICU</code> = 0.01 (ICU)</li>
+<li><code>hhAdherenceBase</code> = 0.5 (hand hygiene compliance for all HCW types)</li>
+<li><code>ppeAdherenceIfCp</code> = 0.5 (PPE/glove compliance)</li>
+</ul>
+</section>
+</section>
+<section id="disease-transmission-model-partially-implemented" class="level2">
+<h2 class="anchored" data-anchor-id="disease-transmission-model-partially-implemented">Disease Transmission Model (Partially Implemented)</h2>
+<p>The model includes disease tracking infrastructure but transmission logic is not fully implemented:</p>
+<section id="disease-states-diseasestates.java" class="level3">
+<h3 class="anchored" data-anchor-id="disease-states-diseasestates.java">Disease States (DiseaseStates.java)</h3>
+<ul>
+<li>SUSCEPTIBLE - not colonized or infected</li>
+<li>COLONIZED - carrying MRSA but asymptomatic</li>
+<li>INFECTED - active MRSA infection</li>
+</ul>
+</section>
+<section id="current-implementation" class="level3">
+<h3 class="anchored" data-anchor-id="current-implementation">Current Implementation</h3>
+<ul>
+<li>Patients can be imported with INFECTED state on admission</li>
+<li>HCWs can be marked as contaminated</li>
+<li>Visit checking logic exists (HealthCareWorker.java:26-56, 72-88)</li>
+<li><strong>However:</strong> Actual transmission during visits is not fully implemented
+<ul>
+<li><code>checkTransmissionToPatient()</code> returns true if HCW performs hand hygiene (line 61-64)</li>
+<li><code>checkTransmissionToHcw()</code> returns false (line 68-70)</li>
+<li><code>checkTransmission()</code> is empty (line 85-88)</li>
+</ul></li>
+</ul>
+</section>
+<section id="data-collection-for-transmission-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="data-collection-for-transmission-analysis">Data Collection for Transmission Analysis</h3>
+<p>Even though transmission is not implemented, the model records: - HCW contamination status at each visit - Patient disease state at each visit - Visit timing and location This allows post-hoc transmission analysis or model extension.</p>
+</section>
+</section>
+<section id="summary-of-model-dynamics" class="level2">
+<h2 class="anchored" data-anchor-id="summary-of-model-dynamics">Summary of Model Dynamics</h2>
+<p>The model simulates a continuous flow hospital over 365 days:</p>
+<ol type="1">
+<li><strong>Patients arrive</strong> stochastically (~20 admissions per day on average)</li>
+<li><strong>Admitted to ICU (15%) or Ward (85%)</strong> based on probability and bed availability</li>
+<li><strong>Assigned to doctors</strong> (once, at admission) using load-balancing</li>
+<li><strong>Assigned to nurses</strong> (twice daily, at shift changes) using load-balancing</li>
+<li><strong>Visited by HCWs</strong> throughout their stay according to stochastic schedules</li>
+<li><strong>ICU patients may transfer</strong> to ward after some time</li>
+<li><strong>All patients eventually discharge</strong> after length-of-stay drawn from location-specific distributions</li>
+<li><strong>Visit data</strong> and <strong>discharge data</strong> accumulate throughout simulation</li>
+<li><strong>Output files</strong> written at day 365 for analysis</li>
+</ol>
+<p>The model generates realistic admission-discharge-transfer patterns and HCW workload distributions that can be analyzed using the R/Quarto scripts in the <code>R/</code> directory.</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
