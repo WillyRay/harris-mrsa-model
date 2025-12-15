@@ -20,11 +20,15 @@ This document provides analysis of the visit rates and behaviors of health care 
 ```{r}
 library(dplyr)
 
-df2 <- read.table("visit_data.txt", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+df1 <- read.table("visit_data.txt", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+df2 <- df1[df1$patientLocation == 'ICU', ]
+
+
 df2$visitDay <- floor(df2$visitTime)
 
 # Remove first 90 visitTime values
 df2_filtered <- df2 %>% arrange(visitTime) %>% slice(-(1:90))
+
 
 # Histogram: for each hcwId, each day, distribution of number of visits
 visits_per_day <- df2_filtered %>% group_by(hcwId, visitDay) %>% summarise(n_visits = n())
@@ -194,53 +198,80 @@ median_pt_visits <- median(visits_per_pt_day$n_visits)
 **Mean visits per PT per day:** `r mean_pt_visits`  
 **Median visits per PT per day:** `r median_pt_visits`
 
-## Distribution of Number of Visits per OT per Day
 
+
+
+## Distribution of Number of Unique Patients Visited per Day by HCW Type
+
+### Nurses
 ```{r}
-visits_per_ot_day <- df_ot_visits %>% group_by(hcwId, visitDay) %>% summarise(n_visits = n())
-ggplot(visits_per_ot_day, aes(x = n_visits)) +
-	geom_histogram(binwidth = 1, fill = "red", color = "black") +
-	geom_vline(aes(xintercept = mean(visits_per_ot_day$n_visits)), color = "blue", linetype = "dashed", size = 1) +
-	geom_vline(aes(xintercept = median(visits_per_ot_day$n_visits)), color = "red", linetype = "dotted", size = 1) +
-	labs(title = "Distribution of Number of Visits per OT per Day",
-			 x = "Number of Visits",
-			 y = "Count (OT-Day pairs)",
+unique_patients_per_nurse_day <- df_nurse_visits %>% group_by(hcwId, visitDay) %>% summarise(n_unique_patients = n_distinct(patientId))
+ggplot(unique_patients_per_nurse_day, aes(x = n_unique_patients)) +
+	geom_histogram(binwidth = 1, fill = "green", color = "black") +
+	geom_vline(aes(xintercept = mean(n_unique_patients)), color = "blue", linetype = "dashed", size = 1) +
+	geom_vline(aes(xintercept = median(n_unique_patients)), color = "red", linetype = "dotted", size = 1) +
+	labs(title = "Distribution of Unique Patients Visited per Nurse per Day",
+			 x = "Number of Unique Patients",
+			 y = "Count (Nurse-Day pairs)",
 			 subtitle = "Blue dashed = mean, Red dotted = median") +
 	theme_minimal()
-min_ot_visits <- min(visits_per_ot_day$n_visits)
-max_ot_visits <- max(visits_per_ot_day$n_visits)
-mean_ot_visits <- mean(visits_per_ot_day$n_visits)
-median_ot_visits <- median(visits_per_ot_day$n_visits)
+min_nurse_patients <- min(unique_patients_per_nurse_day$n_unique_patients)
+max_nurse_patients <- max(unique_patients_per_nurse_day$n_unique_patients)
+mean_nurse_patients <- mean(unique_patients_per_nurse_day$n_unique_patients)
+median_nurse_patients <- median(unique_patients_per_nurse_day$n_unique_patients)
 ```
 
-**Min visits per OT per day:** `r min_ot_visits`  
-**Max visits per OT per day:** `r max_ot_visits`  
-**Mean visits per OT per day:** `r mean_ot_visits`  
-**Median visits per OT per day:** `r median_ot_visits`
+**Min unique patients per Nurse per day:** `r min_nurse_patients`  
+**Max unique patients per Nurse per day:** `r max_nurse_patients`  
+**Mean unique patients per Nurse per day:** `r mean_nurse_patients`  
+**Median unique patients per Nurse per day:** `r median_nurse_patients`
 
-## Distribution of Number of Visits per RT per Day
-
+## Unique Patients visited per day
+### Doctors
 ```{r}
-visits_per_rt_day <- df_rt_visits %>% group_by(hcwId, visitDay) %>% summarise(n_visits = n())
-ggplot(visits_per_rt_day, aes(x = n_visits)) +
-	geom_histogram(binwidth = 1, fill = "purple", color = "black") +
-	geom_vline(aes(xintercept = mean(visits_per_rt_day$n_visits)), color = "blue", linetype = "dashed", size = 1) +
-	geom_vline(aes(xintercept = median(visits_per_rt_day$n_visits)), color = "red", linetype = "dotted", size = 1) +
-	labs(title = "Distribution of Number of Visits per RT per Day",
-			 x = "Number of Visits",
-			 y = "Count (RT-Day pairs)",
+unique_patients_per_doctor_day <- df_doctor_visits %>% group_by(hcwId, visitDay) %>% summarise(n_unique_patients = n_distinct(patientId))
+ggplot(unique_patients_per_doctor_day, aes(x = n_unique_patients)) +
+	geom_histogram(binwidth = 1, fill = "orange", color = "black") +
+	geom_vline(aes(xintercept = mean(n_unique_patients)), color = "blue", linetype = "dashed", size = 1) +
+	geom_vline(aes(xintercept = median(n_unique_patients)), color = "red", linetype = "dotted", size = 1) +
+	labs(title = "Distribution of Unique Patients Visited per Doctor per Day",
+			 x = "Number of Unique Patients",
+			 y = "Count (Doctor-Day pairs)",
 			 subtitle = "Blue dashed = mean, Red dotted = median") +
 	theme_minimal()
-min_rt_visits <- min(visits_per_rt_day$n_visits)
-max_rt_visits <- max(visits_per_rt_day$n_visits)
-mean_rt_visits <- mean(visits_per_rt_day$n_visits)
-median_rt_visits <- median(visits_per_rt_day$n_visits)
+min_doctor_patients <- min(unique_patients_per_doctor_day$n_unique_patients)
+max_doctor_patients <- max(unique_patients_per_doctor_day$n_unique_patients)
+mean_doctor_patients <- mean(unique_patients_per_doctor_day$n_unique_patients)
+median_doctor_patients <- median(unique_patients_per_doctor_day$n_unique_patients)
 ```
 
-**Min visits per RT per day:** `r min_rt_visits`  
-**Max visits per RT per day:** `r max_rt_visits`  
-**Mean visits per RT per day:** `r mean_rt_visits`  
-**Median visits per RT per day:** `r median_rt_visits`
+**Min unique patients per Doctor per day:** `r min_doctor_patients`  
+**Max unique patients per Doctor per day:** `r max_doctor_patients`  
+**Mean unique patients per Doctor per day:** `r mean_doctor_patients`  
+**Median unique patients per Doctor per day:** `r median_doctor_patients`
 
 
+## Distribution of Number of Unique Healthcare Providers Seen by a Patient per Day
+
+```{r}
+unique_providers_per_patient_day <- df2_filtered %>% group_by(patientId, visitDay) %>% summarise(n_unique_providers = n_distinct(hcwId))
+ggplot(unique_providers_per_patient_day, aes(x = n_unique_providers)) +
+	geom_histogram(binwidth = 1, fill = "gold", color = "black") +
+	geom_vline(aes(xintercept = mean(n_unique_providers)), color = "blue", linetype = "dashed", size = 1) +
+	geom_vline(aes(xintercept = median(n_unique_providers)), color = "red", linetype = "dotted", size = 1) +
+	labs(title = "Distribution of Unique Healthcare Providers Seen by a Patient per Day",
+			 x = "Number of Unique Providers",
+			 y = "Count (Patient-Day pairs)",
+			 subtitle = "Blue dashed = mean, Red dotted = median") +
+	theme_minimal()
+min_patient_providers <- min(unique_providers_per_patient_day$n_unique_providers)
+max_patient_providers <- max(unique_providers_per_patient_day$n_unique_providers)
+mean_patient_providers <- mean(unique_providers_per_patient_day$n_unique_providers)
+median_patient_providers <- median(unique_providers_per_patient_day$n_unique_providers)
+```
+
+**Min unique providers per patient per day:** `r min_patient_providers`  
+**Max unique providers per patient per day:** `r max_patient_providers`  
+**Mean unique providers per patient per day:** `r mean_patient_providers`  
+**Median unique providers per patient per day:** `r median_patient_providers`
 

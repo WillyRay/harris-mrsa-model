@@ -1,0 +1,170 @@
+---
+title: "Transmission Analysis"
+format:
+  html:
+    embed-resources: true
+    code-fold: true
+    toc: true
+    toc-depth: 2
+execute:
+  echo: false
+  warning: false
+  message: false
+params:
+  file: "transmission_data.txt"
+---
+
+# Overview
+
+This report provides a quick look at the simulation transmission events stored in `params$file`.
+
+- Columns expected: `time`, `patientId`, `hcwId`, `hcwType`, `location`
+- Time appears to be in days (fractional). Daily summaries use `floor(time)`.
+
+```{r}
+library(readr)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+```
+
+## Load Data
+
+```{r}
+# Helper to read CSV robustly
+read_transmissions <- function(path) {
+  df <- readr::read_csv(path, show_col_types = FALSE, progress = FALSE)
+  # Standardize column names if needed
+  nm <- names(df)
+  nm <- str_replace_all(nm, "\\r|\\n", "")
+  names(df) <- nm
+  expected <- c("time", "patientId", "hcwId", "hcwType", "location")
+  missing <- setdiff(expected, names(df))
+  if (length(missing)) {
+    stop("Missing expected columns: ", paste(missing, collapse = ", "))
+  }
+  # Coerce basic types
+  df <- df %>% mutate(
+    time = as.numeric(time),
+    patientId = as.integer(patientId),
+    hcwId = as.integer(hcwId),
+    hcwType = as.factor(hcwType),
+    location = as.factor(location)
+  )
+  df
+}
+
+path <- params$file
+trans <- read_transmissions(path)
+
+# Derived fields
+trans <- trans %>% mutate(day = floor(time))
+
+n_events <- nrow(trans)
+unique_patients <- n_distinct(trans$patientId)
+unique_hcws <- n_distinct(trans$hcwId)
+unique_types <- n_distinct(trans$hcwType)
+unique_locs <- n_distinct(trans$location)
+
+head(trans)
+```
+
+## Key Metrics
+
+```{r}
+tribble(
+  ~Metric, ~Value,
+  "Total transmission events", n_events,
+  "Unique patients", unique_patients,
+  "Unique HCWs", unique_hcws,
+  "HCW types", unique_types,
+  "Locations", unique_locs
+) %>%
+  kable(caption = "Overview metrics")
+```
+
+## By Location
+
+```{r}
+by_loc <- trans %>%
+  count(location, name = "events") %>%
+  mutate(percent = 100 * events / sum(events))
+
+kable(by_loc, digits = 1, caption = "Events by location")
+```
+
+## By HCW Type
+
+```{r}
+by_type <- trans %>%
+  count(hcwType, name = "events") %>%
+  arrange(desc(events)) %>%
+  mutate(percent = 100 * events / sum(events))
+
+kable(by_type, digits = 1, caption = "Events by HCW type")
+```
+
+## HCW Type × Location
+
+```{r}
+by_type_loc <- trans %>%
+  count(hcwType, location, name = "events") %>%
+  group_by(hcwType) %>%
+  mutate(row_percent = 100 * events / sum(events)) %>%
+  ungroup()
+
+kable(by_type_loc, digits = 1, caption = "Events by HCW type and location")
+```
+
+## Daily Events
+
+```{r}
+by_day <- trans %>%
+  count(day, name = "events")
+
+kable(by_day %>% head(15), caption = "First 15 days: events per day")
+```
+
+```{r}
+by_day %>%
+  ggplot(aes(x = day, y = events)) +
+  geom_col(fill = "#2c7fb8") +
+  labs(title = "Transmission events per day",
+       x = "Day",
+       y = "Events") +
+  theme_minimal()
+```
+
+## Daily by Location
+
+```{r}
+by_day_loc <- trans %>%
+  count(day, location, name = "events")
+
+by_day_loc %>%
+  ggplot(aes(x = day, y = events, fill = location)) +
+  geom_col(position = "stack") +
+  labs(title = "Transmission events per day by location",
+       x = "Day",
+       y = "Events",
+       fill = "Location") +
+  theme_minimal()
+```
+
+## Top HCWs (by events)
+
+```{r}
+by_hcw <- trans %>%
+  count(hcwId, hcwType, name = "events") %>%
+  arrange(desc(events))
+
+kable(by_hcw %>% head(15), caption = "Top 15 HCWs by events")
+```
+
+## Session Info
+
+```{r}
+sessionInfo()
+```

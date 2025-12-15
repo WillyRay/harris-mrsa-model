@@ -6,16 +6,21 @@ import containers.Hospital;
 import processes.Admission;
 import processes.PatientVisit;
 import repast.simphony.context.Context;
+import repast.simphony.context.DefaultContext;
 import repast.simphony.context.space.graph.NetworkBuilder;
 import repast.simphony.dataLoader.ContextBuilder;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ISchedule;
 import repast.simphony.engine.schedule.ScheduledMethod;
+import repast.simphony.parameter.Parameters;
 import repast.simphony.space.graph.Network;
+import agents.Agent;
 import agents.DischargedPatient;
 import agents.Doctor;
 import agents.HcwType;
 import agents.HealthCareWorker;
+import agents.IcuRt;
+import agents.Nurse;
 import agents.Patient;
 import agents.Therapist;
 import utils.Chooser;
@@ -35,7 +40,7 @@ import org.apache.commons.math3.distribution.LogNormalDistribution;
 
 public class Builder implements ContextBuilder<Object> {
 	
-    	
+    	private Parameters params;
 	ISchedule schedule ;
 	Hospital hospital;
 	Admission admissionProcess;
@@ -46,9 +51,10 @@ public class Builder implements ContextBuilder<Object> {
 	private int defaultInt = 1;
 	
 	// adt parameters
-	private int hospitalCapacity = 85;
-	private int icuCapacity = 15;
-	private double admissionsRate = 0.2; //mean intra_event time
+	private int hospitalCapacity = 120; //total hospital capacity ward+icu
+	private int icuCapacity = 20;
+	// ward capacity is hospitalCapacity - icuCapacity
+	private double admissionsRate = 0.05; //mean intra_event time
 	private double dischargeShape = 1.253;
 	private double dischargeScale = 0.768;
 	private double icuDischargeShape = 0.916;
@@ -58,18 +64,28 @@ public class Builder implements ContextBuilder<Object> {
 	private double icuTransferProbability = 0.1; //probability of transfer to ICU
 	private double icuTransferShape = 0.5;
 	private double icuTransferScale = 1.0;
-	private double needsRt = defaultDouble;
-	private double needsPt = defaultDouble;
-	private double needsOt = defaultDouble;
-	private double needsRtIcu = defaultDouble;
-	private double needsPtIcu = defaultDouble;
-	private double needsOtIcu = defaultDouble;
-	private double nurseIntraVisitShape = 0.585;
-	private double nurseIntraVisitScale = 48.22;
-	private double doctorIntraVisitShape = 0.585;
-	private double doctorIntraVisitScale = 75.22;
-	private double specialistIntraVisitShape = 0.585;
-	private double specialistIntraVisitScale = 100.22;
+	private double needsRt = 0.1; //these are not true.
+	private double needsPt = 0.1;
+	private double needsOt = 0.1; //ward only
+	private double needsRtIcu = 1.0;
+	private double needsPtIcu = needsPt;
+	private double needsOtIcu = needsOt;
+	//These are all in minutes.
+	private double nurseIntraVisitShape = 0.54;
+	private double nurseIntraVisitScale = 55.1;
+	private double nurseICUIntraVisitShape = 0.54;
+	private double nurseICUIntraVisitScale = 20;
+	private double doctorIntraVisitShape = 0.52;
+	private double doctorIntraVisitScale = 90.7;
+	private double doctorIcuIntraVisitShape = 0.52;
+	private double doctorIcuIntraVisitScale = 35.3;
+	private double specialistIntraVisitScale = 61.7;
+	private double specialistIntraVisitShape = 0.62;
+	private double roomVisitDuration = 6.6;
+	private Context<Agent> wardContext = new DefaultContext<Agent>();
+	private Context<Agent> icuContext = new DefaultContext<Agent>();
+	
+	 
 	
 
 	
@@ -79,12 +95,37 @@ public class Builder implements ContextBuilder<Object> {
 	private double rtsPerPatient = defaultDouble;
 	private double ptsPerPatient = defaultDouble;
 	private double otsPerPatient = defaultDouble;
-	private double nursesPerPatient = 0.3;
+	private double nursesPerPatient = 0.2; //per bed, actually 
 	private double physiciansPerPatient = 0.2;
+	private double icuNursesPerPatient = 0.5;
+	private double icuPhysiciansPerPatient = 0.3;
+	private double icuRtsPerPatient = 0.1;
 	
 	//transmission parameters
-	private double cleanPtColonizeddHcwColonizationProb = defaultDouble;
-	private double contaminedPtCleanHcwColonizationProb = defaultDouble;
+	private double cleanPtColonizeddHcwColonizationProb = 0.4;
+	private double contaminedPtCleanHcwColonizationProb = 0.4;
+	private double hhEfficacy; //efficacy of hand hygiene
+
+	private double hhAdherenceBase;
+	private double nurseHhAdherence;
+	private double doctorHhAdherence;
+	private double therapistHhAdherence;
+	private double nurseHhAdherencePost;
+	private double doctorHhAdherencePost;
+	private double therapistHhAdherencePost;
+	private double ppeAdherenceIfCp;
+	
+	
+	
+	//disease
+	private double admitImportationInfectionProbability = 0.01;
+	private double admitImportationInfectionProbabilityICU = admitImportationInfectionProbability;
+	private double importerDieProbability = 0.1;
+	private double importerDiePrombabilityicu = importerDieProbability;
+	
+	
+
+	
 	
 	//review on 1/27:
 	// review ADT model, HCW staffing ratios, contact stuff
@@ -96,6 +137,7 @@ public class Builder implements ContextBuilder<Object> {
 	  }	
 	   @ScheduledMethod(start = 0.5, interval = 0.5)
 	    public void perShiftOperations() {
+	       this.hospital.setPatientNurseAssignments();
 	   } 
 	    
 	 @ScheduledMethod(start =365, interval = 1)
@@ -130,6 +172,24 @@ public class Builder implements ContextBuilder<Object> {
 	     } catch (IOException e) {
 	         e.printStackTrace();
 	     }
+	     
+	   //print the hospital.visitData StringBuffer to a file
+	     try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter("admission_data.txt", false))) {
+	         writer.write(hospital.admissionData.toString());
+	         writer.newLine();
+	     } catch (IOException e) {
+	         e.printStackTrace();
+	     }
+	     
+	     //print the hospital.transmissionData StringBuffer to a file
+	     try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter("transmission_data.txt", false))) {
+	         writer.write(hospital.tranmissionData.toString());
+	         writer.newLine();
+	     } catch (IOException e) {
+	         e.printStackTrace();
+	     }
+	     
+	     
 	 }
 	 
 	
@@ -143,8 +203,20 @@ public class Builder implements ContextBuilder<Object> {
 		    
 	
 	   
-	    
-		schedule = repast.simphony.engine.environment.RunEnvironment.getInstance().getCurrentSchedule();
+	    	params = RunEnvironment.getInstance().getParameters();
+		schedule = RunEnvironment.getInstance().getCurrentSchedule();
+		
+	
+		hhEfficacy = params.getDouble("hhEfficacy"); //efficacy of hand hygiene
+
+		hhAdherenceBase = params.getDouble("hhAdherenceBase");
+		nurseHhAdherence = params.getDouble("nurseHhAdherence");
+		doctorHhAdherence = params.getDouble("doctorHhAdherence");
+		therapistHhAdherence = params.getDouble("therapistHhAdherence");
+		nurseHhAdherencePost = params.getDouble("nurseHhAdherencePost");
+		doctorHhAdherencePost = params.getDouble("doctorHhAdherencePost");
+		therapistHhAdherencePost = params.getDouble("therapistHhAdherencePost");
+		ppeAdherenceIfCp = params.getDouble("ppeAdherenceIfCp");
 		
 		//WRR: Create a hospital with 90 beds.
 		hospital = new Hospital(this, hospitalCapacity, icuCapacity);
@@ -155,16 +227,9 @@ public class Builder implements ContextBuilder<Object> {
 		
 		
 		buildHealthCareWorkers();
-		HealthCareWorker doc1 = new HealthCareWorker(HcwType.DOCTOR, hospital);
-		PatientVisit pv = new PatientVisit(0.2, hospital, doc1);
-		doc1.setAttribute("visit_process", pv);
-		pv.start();
 		
 		
-		NetworkBuilder networkBuilder = new NetworkBuilder("icu", context, true);
-		Network icuNetwork = networkBuilder.buildNetwork();
-		networkBuilder = new NetworkBuilder("wards", context, true);
-		Network wardsNetwork = networkBuilder.buildNetwork();
+	
 		
 		
 		return context;
@@ -172,27 +237,87 @@ public class Builder implements ContextBuilder<Object> {
 	}
 	
 	private void buildHealthCareWorkers() {
-	   
-	    
-	    for (int i = 0; i<hospitalCapacity*physiciansPerPatient; i++) {
-		Doctor doc1 = new Doctor(HcwType.DOCTOR, hospital);
+	      
+	    for (int i = 0; i<(hospitalCapacity-icuCapacity)*physiciansPerPatient; i++) {
+		Doctor doc1 = new Doctor(HcwType.DOCTOR, hospital, doctorHhAdherence, doctorHhAdherencePost, ppeAdherenceIfCp);
+		doc1.setHandHygieneCompliance(doctorHhAdherence);
+		doc1.setHandHygieneCompliancePost(doctorHhAdherencePost);
+		doc1.setGloveCompliance(ppeAdherenceIfCp);
 		PatientVisit pv = new PatientVisit(0.02, hospital, doc1);
 		pv.setDistro(new GammaDistribution(doctorIntraVisitShape, doctorIntraVisitScale));	
 		doc1.setAttribute("visit_process", pv);
 		pv.start();
 		hospital.add(doc1);
+		wardContext.add(doc1);
+		doc1.icu=false;
+		
 	    }
 	    
-	    for (int i = 0; i<hospitalCapacity*nursesPerPatient; i++) {
-		HealthCareWorker nurse = new HealthCareWorker(HcwType.NURSE, hospital);
-		PatientVisit pv = new PatientVisit(0.02, hospital, nurse);
-		pv.setDistro(new GammaDistribution(nurseIntraVisitShape, nurseIntraVisitScale));
-		nurse.setAttribute("visit_process", pv);
+	    for (int i = 0; i<icuCapacity*icuPhysiciansPerPatient; i++) {
+		Doctor doc1 = new Doctor(HcwType.DOCTOR, hospital, doctorHhAdherence, doctorHhAdherencePost, ppeAdherenceIfCp);
+		doc1.setHandHygieneCompliance(doctorHhAdherence);
+		doc1.setHandHygieneCompliancePost(doctorHhAdherencePost);
+		doc1.setGloveCompliance(ppeAdherenceIfCp);
+		PatientVisit pv = new PatientVisit(0.04, hospital, doc1);
+		pv.setDistro(new GammaDistribution(doctorIcuIntraVisitShape, doctorIcuIntraVisitScale));	
+		doc1.setAttribute("visit_process", pv);
 		pv.start();
+		hospital.add(doc1);
+		icuContext.add(doc1);
+		doc1.icu=true;
+			
 	    }
+	    
+	    for (int i = 0; i<(hospitalCapacity-icuCapacity)*nursesPerPatient; i++) {
+            Nurse nurse = new Nurse(HcwType.NURSE, hospital, nurseHhAdherence, nurseHhAdherencePost, ppeAdherenceIfCp);
+            nurse.setHandHygieneCompliance(nurseHhAdherence);
+            nurse.setHandHygieneCompliancePost(nurseHhAdherencePost);
+            nurse.setGloveCompliance(ppeAdherenceIfCp);
+            PatientVisit pv = new PatientVisit(0.02, hospital, nurse);
+            pv.setDistro(new GammaDistribution(nurseIntraVisitShape, nurseIntraVisitScale));
+            nurse.setAttribute("visit_process", pv);
+            pv.start();
+            hospital.add(nurse);
+            wardContext.add(nurse);
+            nurse.icu=false;
+	    }
+	    
+	    for (int i = 0; i< (icuCapacity)*icuNursesPerPatient; i++) {
+	            Nurse nurse = new Nurse(HcwType.NURSE, hospital, nurseHhAdherence, nurseHhAdherencePost, ppeAdherenceIfCp);
+	            nurse.setHandHygieneCompliance(nurseHhAdherence);
+	            nurse.setHandHygieneCompliancePost(nurseHhAdherencePost);
+	            nurse.setGloveCompliance(ppeAdherenceIfCp);
+	            PatientVisit pv = new PatientVisit(1.0/3.0, hospital, nurse);
+	            pv.setDistro(new GammaDistribution(nurseICUIntraVisitShape, nurseICUIntraVisitScale));
+	            nurse.setAttribute("visit_process", pv);
+	            pv.start();
+	            hospital.add(nurse);
+	            icuContext.add(nurse);
+	            nurse.icu=true;
+		    }
+	    //IcuRts
+	    for (int i = 0; i< (icuCapacity)*icuRtsPerPatient; i++) {
+	            //Nurse nurse = new Nurse(HcwType.NURSE, hospital);
+	            IcuRt icuRt = new IcuRt(HcwType.ICURT, hospital, therapistHhAdherence, therapistHhAdherencePost, ppeAdherenceIfCp);	
+	            icuRt.setHandHygieneCompliance(therapistHhAdherence);
+	            icuRt.setHandHygieneCompliancePost(therapistHhAdherencePost);
+	            icuRt.setGloveCompliance(ppeAdherenceIfCp);
+	       	    PatientVisit pv = new PatientVisit(1.0/3.0, hospital, icuRt);
+	            pv.setDistro(new GammaDistribution(nurseICUIntraVisitShape, nurseICUIntraVisitScale));
+	            icuRt.setAttribute("visit_process", pv);
+	            pv.start();
+	            hospital.add(icuRt);
+	            icuContext.add(icuRt);
+	            icuRt.icu=true;
+		    }
+	    
+		    
 	    
 	    for (int i = 0; i<hospitalCapacity*rtsPerPatient; i++) {
-		Therapist hcw  = new Therapist(HcwType.RT, hospital);
+		Therapist hcw  = new Therapist(HcwType.RT, hospital, therapistHhAdherence, therapistHhAdherencePost, ppeAdherenceIfCp);
+		hcw.setHandHygieneCompliance(therapistHhAdherence);
+		hcw.setHandHygieneCompliancePost(therapistHhAdherencePost);
+		hcw.setGloveCompliance(ppeAdherenceIfCp);
 		hcw.setNeedsArray(hospital.patientsNeedingRt);
 		PatientVisit pv = new PatientVisit(0.1, hospital, hcw);
 		pv.setDistro(new GammaDistribution(specialistIntraVisitShape, specialistIntraVisitScale));
@@ -201,7 +326,10 @@ public class Builder implements ContextBuilder<Object> {
 	    }
 	    
 	    for (int i = 0; i<hospitalCapacity*ptsPerPatient; i++) {
-		Therapist hcw  = new Therapist(HcwType.PT, hospital);
+		Therapist hcw  = new Therapist(HcwType.PT, hospital, therapistHhAdherence, therapistHhAdherencePost, ppeAdherenceIfCp);
+		hcw.setHandHygieneCompliance(therapistHhAdherence);
+		hcw.setHandHygieneCompliancePost(therapistHhAdherencePost);
+		hcw.setGloveCompliance(ppeAdherenceIfCp);
 		hcw.setNeedsArray(hospital.patientsNeedingPt);
 		PatientVisit pv = new PatientVisit(0.1, hospital, hcw);
 		pv.setDistro(new GammaDistribution(specialistIntraVisitShape, specialistIntraVisitScale));
@@ -210,7 +338,9 @@ public class Builder implements ContextBuilder<Object> {
 	    }
 	    
 	    for (int i = 0; i<hospitalCapacity*otsPerPatient; i++) {
-		Therapist hcw  = new Therapist(HcwType.OT, hospital);
+		Therapist hcw  = new Therapist(HcwType.OT, hospital, therapistHhAdherence, therapistHhAdherencePost, ppeAdherenceIfCp);
+		hcw.setHandHygieneCompliance(therapistHhAdherence);
+		hcw.setGloveCompliance(ppeAdherenceIfCp);
 		hcw.setNeedsArray(hospital.patientsNeedingOt);
 		PatientVisit pv = new PatientVisit(0.02, hospital, hcw);
 		pv.setDistro(new GammaDistribution(specialistIntraVisitShape, specialistIntraVisitScale));
@@ -452,5 +582,54 @@ public class Builder implements ContextBuilder<Object> {
 	public void setContaminedPtCleanHcwColonizationProb(double contaminedPtCleanHcwColonizationProb) {
 	    this.contaminedPtCleanHcwColonizationProb = contaminedPtCleanHcwColonizationProb;
 	}
+	public Context<Agent> getWardContext() {
+	    return wardContext;
+	}
+	public void setWardContext(Context<Agent> wardContext) {
+	    this.wardContext = wardContext;
+	}
+	public Context<Agent> getIcuContext() {
+	    return icuContext;
+	}
+	public void setIcuContext(Context<Agent> icuContext) {
+	    this.icuContext = icuContext;
+	}
+	public double getAdmitImportationInfectionProbability() {
+	    return admitImportationInfectionProbability;
+	}
+	public void setAdmitImportationInfectionProbability(double admitImportationInfectionProbability) {
+	    this.admitImportationInfectionProbability = admitImportationInfectionProbability;
+	}
+	public double getAdmitImportationInfectionProbabilityICU() {
+	    return admitImportationInfectionProbabilityICU;
+	}
+	public void setAdmitImportationInfectionProbabilityICU(double admitImportationInfectionProbabilityICU) {
+	    this.admitImportationInfectionProbabilityICU = admitImportationInfectionProbabilityICU;
+	}
+	public double getNurseHhAdherence() {
+	    return nurseHhAdherence;
+	}
+	public void setNurseHhAdherence(double nurseHhAdherence) {
+	    this.nurseHhAdherence = nurseHhAdherence;
+	}
+	public double getDoctorHhAdherence() {
+	    return doctorHhAdherence;
+	}
+	public void setDoctorHhAdherence(double doctorHhAdherence) {
+	    this.doctorHhAdherence = doctorHhAdherence;
+	}
+	public double getTherapistHhAdherence() {
+	    return therapistHhAdherence;
+	}
+	public void setTherapistHhAdherence(double therapistHhAdherence) {
+	    this.therapistHhAdherence = therapistHhAdherence;
+	}
+	public double getPpeAdherenceIfCp() {
+	    return ppeAdherenceIfCp;
+	}
+	public void setPpeAdherenceIfCp(double ppeAdherenceIfCp) {
+	    this.ppeAdherenceIfCp = ppeAdherenceIfCp;
+	}
+
 
 }

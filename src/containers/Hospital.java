@@ -20,16 +20,17 @@ import repast.simphony.context.DefaultContext;
 import repast.simphony.context.space.graph.NetworkBuilder;
 import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.space.graph.Network;
+import repast.simphony.space.graph.RepastEdge;
 import utils.Chooser;
 import utils.TimeUtils;
 
 public class Hospital extends DefaultContext<Agent> {
-    Builder builder;
+    public Builder builder;
 
     ArrayList<Patient> patients;
     ArrayList<HealthCareWorker> hcws;
     int bedCount;
-    ArrayList<Patient> inIcu;
+    public ArrayList<Patient> inIcu;
     int icuBedCount;
     ArrayList<Patient> notInIcu;
     int wardBedCount;
@@ -38,20 +39,31 @@ public class Hospital extends DefaultContext<Agent> {
     Transfer transferer;
     ArrayList<String> patientOutputs;
     ArrayList<DischargedPatient> dischargedPatients;
-   private Network<Agent> hospitalnet;
+    private Network<Agent> hospitalnet;
     
     public ArrayList<Patient> patientsNeedingOt;
     public ArrayList<Patient> patientsNeedingRt;
     public ArrayList<Patient> patientsNeedingPt;
     
+    public Context<Agent> wardContext;
+    public Context<Agent> icuContext;
+    
     public StringBuffer visitData;
+    public StringBuffer admissionData;
+    public StringBuffer tranmissionData;
 
     public Hospital(Builder builder, int bedCount, int icuBedCount) {
 	super();
 	
+	this.wardContext = builder.getWardContext();
+	this.icuContext = builder.getIcuContext();
 	this.visitData = new StringBuffer();
-	visitData.append("hcwId,hcwType,patientId,patientLocation,visitTime\n");
-	
+	visitData.append("hcwId,hcwType,hcwDiseaseState,patientId,patientDiseaseState,patientLocation,visitTime\n");
+	this.admissionData = new StringBuffer();
+	this.admissionData.append("patientId,admitTime,icuAdmit,importation\n");
+	this.tranmissionData = new StringBuffer();
+	this.tranmissionData.append("time,patientId,hcwId,hcwType,location\n");
+
 	
 	this.dischargedPatients = new ArrayList<DischargedPatient>();
 	this.patients = new ArrayList<Patient>();
@@ -79,12 +91,17 @@ public class Hospital extends DefaultContext<Agent> {
 	if (patients.size() < bedCount) {
 	    Patient p = new Patient();
 	    this.add(p);
-	    builder.getChooser();
-	    if (Chooser.randomTrue(builder.getIcuAdmitProbability())
+	    	    if (Chooser.randomTrue(builder.getIcuAdmitProbability())
 		    && inIcu.size() < icuBedCount) {
-
-
-		patients.add(p);
+	    	
+	    	if (Chooser.randomTrue(builder.getAdmitImportationInfectionProbabilityICU())) {
+	    	    p.getAgentDisease().setDiseaseState(processes.disease.DiseaseStates.INFECTED);
+	    	    p.getAgentDisease().setImported(true);
+	    	    p.getAgentDisease().setDateInfected(TimeUtils.getSchedule().getTickCount());
+	    	    p.getAgentDisease().start();
+	    	}
+	    	    
+	    	patients.add(p);
 		p.setAdmitLocation("ICU");
 		p.setCurrentLocation("ICU");
 		inIcu.add(p);
@@ -97,8 +114,17 @@ public class Hospital extends DefaultContext<Agent> {
 		p.setAttribute("icuAdmit", true);
 		p.setCurrentLocation("ICU");
 		p.setAdmitTime(TimeUtils.getSchedule().getTickCount());
+		this.icuContext.add(p);
+		this.admissionData.append(p.getAgentId() + "," + p.getAdmitTime() + "," + true + "," + p.getAgentDisease().isImported() + "\n");
 	    } else {
-
+		
+		if (Chooser.randomTrue(builder.getAdmitImportationInfectionProbability())) {
+	    	    p.getAgentDisease().setDiseaseState(processes.disease.DiseaseStates.INFECTED);
+	    	    p.getAgentDisease().setImported(true);
+	    	    p.getAgentDisease().setDateInfected(TimeUtils.getSchedule().getTickCount());
+	    	    p.getAgentDisease().start();
+	    	}
+		
 		patients.add(p);
 		p.setAdmitLocation("Ward");
 		p.setCurrentLocation("Ward");
@@ -109,6 +135,8 @@ public class Hospital extends DefaultContext<Agent> {
 		p.setNeedsRt(Chooser.randomTrue(builder.getNeedsRt()));
 		p.setNeedsPt(Chooser.randomTrue(builder.getNeedsPt()));
 		p.setAdmitTime(TimeUtils.getSchedule().getTickCount());   
+		this.wardContext.add(p);
+		this.admissionData.append(p.getAgentId() + "," + p.getAdmitTime() + "," + false + "," + p.getAgentDisease().isImported() + "\n");
 	    }
 	  
 	    if (p.isNeedsOt()) {
@@ -135,11 +163,23 @@ public class Hospital extends DefaultContext<Agent> {
     }
     
     public void setPatientDoctorAssignments(Patient p) {
+	java.util.List<Doctor> doctorList = new ArrayList<Doctor>();
+	if (p.getCurrentLocation().equals("Ward")) {
         // Get all doctors as a list
-        java.util.List<Doctor> doctorList = this.getObjectsAsStream(Agent.class)
-            .filter(a -> a instanceof Doctor)
+	    doctorList = wardContext.getObjectsAsStream(Agent.class)
+	    .filter(a -> a instanceof Doctor)
             .map(a -> (Doctor)a)
             .collect(Collectors.toList());
+        
+	} else {
+	    	// Get all doctors as a list
+	    doctorList = icuContext.getObjectsAsStream(Agent.class)
+	    .filter(a -> a instanceof Doctor)
+	    .map(a -> (Doctor)a)
+	    .collect(Collectors.toList());
+	} 
+	    
+	
 
         if (doctorList.isEmpty()) {
             System.out.println("No doctors available for assignment.");
@@ -160,9 +200,105 @@ public class Hospital extends DefaultContext<Agent> {
         // Randomly choose one if there are ties
         Doctor assignedDoctor = (Doctor) Chooser.chooseOne(minDoctors);
 
-        System.out.println("Assigning patient " + p.getAgentId() + " to doctor " + assignedDoctor.getAgentId());
+        //System.out.println("Assigning patient " + p.getAgentId() +" " +p.getCurrentLocation() + " to doctor " + assignedDoctor.getAgentId() + " ICU: " + assignedDoctor.icu);
         hospitalnet.addEdge(assignedDoctor, p);
+    
     }
+    
+    public void setPatientNurseAssignments() {
+    // Remove any edges in hospitalnet that are between a nurse and a patient
+    java.util.List<repast.simphony.space.graph.RepastEdge<Agent>> edgesToRemove = new ArrayList<>();
+    for (repast.simphony.space.graph.RepastEdge<Agent> edge : hospitalnet.getEdges()) {
+        Agent source = edge.getSource();
+        Agent target = edge.getTarget();
+        boolean sourceIsPatient = source instanceof Patient;
+        boolean targetIsPatient = target instanceof Patient;
+        boolean sourceIsNurse = (source instanceof HealthCareWorker) && !(source instanceof Doctor);
+        boolean targetIsNurse = (target instanceof HealthCareWorker) && !(target instanceof Doctor);
+        // If one is patient and the other is nurse
+        if ((sourceIsPatient && targetIsNurse) || (targetIsPatient && sourceIsNurse)) {
+            edgesToRemove.add(edge);
+        }
+    }
+    // Remove all nurse-patient edges
+    for (repast.simphony.space.graph.RepastEdge<Agent> edge : edgesToRemove) {
+        hospitalnet.removeEdge(edge);
+    }
+    //loop over all patients
+    for (Patient p : patients) {
+        // Get all nurses as a list (TYPE == HcwType.NURSE)
+	java.util.List<HealthCareWorker> nurseList = new ArrayList<HealthCareWorker>();
+        
+	if (p.getCurrentLocation().equals("Ward")) {
+	nurseList = wardContext.getObjectsAsStream(Agent.class)
+	    .filter(a -> (a instanceof HealthCareWorker) && (((HealthCareWorker)a).getTYPE() == agents.HcwType.NURSE))
+	    .map(a -> (HealthCareWorker)a)
+	    .collect(Collectors.toList());
+	} else {
+	    nurseList = icuContext.getObjectsAsStream(Agent.class)
+	    .filter(a -> (a instanceof HealthCareWorker) && (((HealthCareWorker)a).getTYPE() == agents.HcwType.NURSE))
+	    .map(a -> (HealthCareWorker)a)
+	    .collect(Collectors.toList());
+	}
+	if (nurseList.isEmpty()) {
+	    System.out.println("No nurses available for assignment.");
+	    continue;
+	}
+
+        // Sort by number of assigned patients (edges)
+        nurseList.sort(Comparator.comparingInt(n -> hospitalnet.getDegree(n)));
+
+        // Find the minimum degree
+        int minDegree = hospitalnet.getDegree(nurseList.get(0));
+
+        // Filter to all nurses with the minimum degree
+        java.util.List<HealthCareWorker> minNurses = nurseList.stream()
+            .filter(n -> hospitalnet.getDegree(n) == minDegree)
+            .collect(Collectors.toList());
+
+        HealthCareWorker assignedNurse1;
+        HealthCareWorker assignedNurse2;
+        if (minNurses.size() >= 2) {
+            java.util.Collections.shuffle(minNurses);
+            assignedNurse1 = minNurses.get(0);
+            assignedNurse2 = minNurses.get(1);
+        } else {
+            assignedNurse1 = minNurses.get(0);
+            // Find nurses with the next minimum degree, excluding assignedNurse1
+            int nextMinDegree = Integer.MAX_VALUE;
+            for (HealthCareWorker n : nurseList) {
+                int deg = hospitalnet.getDegree(n);
+                if (deg > minDegree && deg < nextMinDegree) {
+                    nextMinDegree = deg;
+                }
+            }
+            java.util.List<HealthCareWorker> nextMinNurses = new ArrayList<>();
+            for (HealthCareWorker n : nurseList) {
+                if (hospitalnet.getDegree(n) == nextMinDegree && n != assignedNurse1) {
+                    nextMinNurses.add(n);
+                }
+            }
+            if (!nextMinNurses.isEmpty()) {
+                assignedNurse2 = (HealthCareWorker) Chooser.chooseOne(nextMinNurses);
+            } else {
+                // If all nurses have the same degree, pick another nurse from minNurses
+                assignedNurse2 = assignedNurse1;
+            }
+        }
+        // Assign nurses, ensuring they are distinct
+        if (assignedNurse1 != null) {
+            //System.out.println("Assigning patient " + p.getAgentId() +" " +p.getCurrentLocation() + " to nurse " + assignedNurse1.getAgentId() + " ICU: " + assignedNurse1.icu);
+            hospitalnet.addEdge(assignedNurse1, p);
+        }
+        if (assignedNurse2 != null && assignedNurse2 != assignedNurse1) {
+            //System.out.println("Assigning patient " + p.getAgentId() +" " +p.getCurrentLocation() + " to nurse " + assignedNurse2.getAgentId() + " ICU: " + assignedNurse2.icu);
+            hospitalnet.addEdge(assignedNurse2, p);
+        }
+    }
+    // Now assign patients to nurses
+    }
+    
+    
 
     public void dischargePatient(Patient p) {
 	double admitTime = p.getAdmitTime();
@@ -230,5 +366,17 @@ public class Hospital extends DefaultContext<Agent> {
 
     public void setDischargedPatients(ArrayList<DischargedPatient> dischargedPatients) {
         this.dischargedPatients = dischargedPatients;
+    }
+
+
+
+    public Network<Agent> getHospitalnet() {
+        return hospitalnet;
+    }
+
+
+
+    public void setHospitalnet(Network<Agent> hospitalnet) {
+        this.hospitalnet = hospitalnet;
     }
 }

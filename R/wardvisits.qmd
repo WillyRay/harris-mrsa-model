@@ -1,0 +1,274 @@
+---
+title: "Ward Healthcare Worker Visit Analysis"
+format: pdf
+---
+
+```{r}
+options(warn = -1)
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+```
+
+
+
+
+# Ward Healthcare Worker Visit Analysis
+
+This document provides analysis of the visit rates and behaviors of health care worker agents (HCWs) in the Ward. All results and visualizations related to HCW visits to Ward patients will be presented here.
+```{r}
+library(dplyr)
+
+df2 <- read.table("visit_data.txt", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+df2$visitDay <- floor(df2$visitTime)
+
+# Filter for Ward visits only
+df2_ward <- df2[df2$patientLocation == 'Ward', ]
+
+# Remove first 90 visitTime values
+df2_filtered <- df2_ward %>% arrange(visitTime) %>% slice(-(1:90))
+
+# Histogram: for each hcwId, each day, distribution of number of visits
+visits_per_day <- df2_filtered %>% group_by(hcwId, visitDay) %>% summarise(n_visits = n())
+library(ggplot2)
+ggplot(visits_per_day, aes(x = n_visits)) +
+	geom_histogram(binwidth = 1, fill = "purple", color = "black") +
+	geom_vline(aes(xintercept = mean(visits_per_day$n_visits)), color = "blue", linetype = "dashed", size = 1) +
+
+	geom_vline(aes(xintercept = median(visits_per_day$n_visits)), color = "red", linetype = "dotted", size = 1) +
+
+	labs(title = "Distribution of Number of Ward Visits per HCW per Day",
+			 x = "Number of Visits",
+			 y = "Count (HCW-Day pairs)",
+			 subtitle = "Blue dashed = mean, Red dotted = median") +
+	theme_minimal()
+
+# Text output for min, max, IQR
+min_visits <- min(visits_per_day$n_visits)
+max_visits <- max(visits_per_day$n_visits)
+iqr_visits <- IQR(visits_per_day$n_visits)
+cat("Min visits per HCW per day:", min_visits, "\n")
+cat("Max visits per HCW per day:", max_visits, "\n")
+cat("Interquartile range (IQR):", iqr_visits, "\n")
+
+
+nvisits <- nrow(df2_ward)
+
+# Filter for nurse visits
+df_nurse_visits <- df2_ward[df2_ward$hcwType == 'NURSE', ]
+df_nurses <- distinct(df_nurse_visits, hcwType, hcwId)
+nurse_count <- nrow(df_nurses)
+# Filter for other HCW types
+df_doctor_visits <- df2_ward[df2_ward$hcwType == 'DOCTOR', ]
+df_doctors <- distinct(df_doctor_visits, hcwType, hcwId)
+doctor_count <- nrow(df_doctors)
+df_pt_visits     <- df2_ward[df2_ward$hcwType == 'PT', ]
+df_pts <- distinct(df_pt_visits, hcwType, hcwId)
+pt_count <- nrow(df_pts)
+
+df_ot_visits     <- df2_ward[df2_ward$hcwType == 'OT', ]
+df_ots <- distinct(df_ot_visits, hcwType, hcwId)
+ot_count <- nrow(df_ots)
+
+df_rt_visits     <- df2_ward[df2_ward$hcwType == 'RT', ]
+df_rts <- distinct(df_rt_visits, hcwType, hcwId)
+rt_count <- nrow(df_rts)
+
+```
+## Total patient visits by hcw type (Ward)
+
+HCW Type | Total visits (365d) | mean/day
+------ | ----- | -----
+NURSE (`{r} nurse_count`) | `{r} nrow(df_nurse_visits)` | `{r} nrow(df_nurse_visits)/365.0/nurse_count`
+DOCTOR (`{r} doctor_count`) | `{r} nrow(df_doctor_visits)` | `{r} nrow(df_doctor_visits)/365.0/doctor_count`
+OT (`{r} ot_count`) | `{r} nrow(df_ot_visits)` | `{r} nrow(df_ot_visits)/365.0/ot_count`
+PT (`{r} pt_count`) | `{r} nrow(df_pt_visits)` | `{r} nrow(df_pt_visits)/365.0/pt_count`
+RT (`{r} rt_count`) | `{r} nrow(df_rt_visits)` | `{r} nrow(df_rt_visits)/365.0/rt_count`
+
+
+
+
+## Histogram: Mean Number of Visits per Patient per Day (Ward)
+
+
+```{r}
+# Calculate mean number of visits per patientId per day
+visits_per_patient_day <- df2_filtered %>% group_by(patientId, visitDay) %>% summarise(n_visits = n())
+mean_visits <- visits_per_patient_day %>% group_by(patientId) %>% summarise(mean_visits = mean(n_visits))
+ggplot(mean_visits, aes(x = mean_visits)) +
+	geom_histogram(binwidth = 1, fill = "purple", color = "black") +
+	geom_vline(xintercept = mean(mean_visits$mean_visits), color = "blue", linetype = "dashed", size = 1) +
+	geom_vline(xintercept = median(mean_visits$mean_visits), color = "red", linetype = "dotted", size = 1) +
+  labs(title = "Mean Number of Ward Visits per Patient per Day",
+	  x = "Mean Visits per Day",
+	  y = "Count (Patients)",
+	  subtitle = "Blue dashed = mean, Red dotted = median") +
+  theme_minimal()
+
+
+min_mean_visits <- min(mean_visits$mean_visits)
+max_mean_visits <- max(mean_visits$mean_visits)
+mean_mean_visits <- mean(mean_visits$mean_visits)
+median_mean_visits <- median(mean_visits$mean_visits)
+cat("Min  visits per patient per day:", min_mean_visits, "\n")
+cat("Max  visits per patient per day:", max_mean_visits, "\n")
+cat("Mean visits per patient per day:", mean_mean_visits, "\n")
+cat("Median visits per patient per day:", median_mean_visits, "\n")
+
+
+```
+
+## Visits per HCW per Day by Type (Ward)
+
+
+## Distribution of Number of Visits per Nurse per Day (Ward)
+
+```{r}
+visits_per_nurse_day <- df_nurse_visits %>% group_by(hcwId, visitDay) %>% summarise(n_visits = n())
+ggplot(visits_per_nurse_day, aes(x = n_visits)) +
+  geom_histogram(binwidth = 1, fill = "green", color = "black") +
+  geom_vline(aes(xintercept = mean(visits_per_nurse_day$n_visits)), color = "blue", linetype = "dashed", size = 2) +
+  geom_vline(aes(xintercept = median(visits_per_nurse_day$n_visits)), color = "red", linetype = "dotted", size = 1) +
+  labs(title = "Distribution of Number of Visits per Ward Nurse per Day",
+       x = "Number of Visits",
+       y = "Count (Nurse-Day pairs)",
+       subtitle = "Blue dashed = mean, Red dotted = median") +
+  theme_minimal()
+```
+
+```{r}
+min_nurse_visits <- min(visits_per_nurse_day$n_visits)
+max_nurse_visits <- max(visits_per_nurse_day$n_visits)
+mean_nurse_visits <- mean(visits_per_nurse_day$n_visits)
+median_nurse_visits <- median(visits_per_nurse_day$n_visits)
+```
+
+**Min visits per Ward nurse per day:** `r min_nurse_visits`
+**Max visits per Ward nurse per day:** `r max_nurse_visits`
+**Mean visits per Ward nurse per day:** `r mean_nurse_visits`
+**Median visits per Ward nurse per day:** `r median_nurse_visits`
+
+## Distribution of Number of Visits per Doctor per Day (Ward)
+
+```{r}
+visits_per_doctor_day <- df_doctor_visits %>% group_by(hcwId, visitDay) %>% summarise(n_visits = n())
+ggplot(visits_per_doctor_day, aes(x = n_visits)) +
+	geom_histogram(binwidth = 1, fill = "orange", color = "black") +
+	geom_vline(aes(xintercept = mean(visits_per_doctor_day$n_visits)), color = "blue", linetype = "dashed", size = 1) +
+	geom_vline(aes(xintercept = median(visits_per_doctor_day$n_visits)), color = "red", linetype = "dotted", size = 1) +
+	labs(title = "Distribution of Number of Visits per Ward Doctor per Day",
+			 x = "Number of Visits",
+			 y = "Count (Doctor-Day pairs)",
+			 subtitle = "Blue dashed = mean, Red dotted = median") +
+	theme_minimal()
+min_doctor_visits <- min(visits_per_doctor_day$n_visits)
+max_doctor_visits <- max(visits_per_doctor_day$n_visits)
+mean_doctor_visits <- mean(visits_per_doctor_day$n_visits)
+median_doctor_visits <- median(visits_per_doctor_day$n_visits)
+```
+
+**Min visits per Ward doctor per day:** `r min_doctor_visits`
+**Max visits per Ward doctor per day:** `r max_doctor_visits`
+**Mean visits per Ward doctor per day:** `r mean_doctor_visits`
+**Median visits per Ward doctor per day:** `r median_doctor_visits`
+
+## Distribution of Number of Visits per PT per Day (Ward)
+
+```{r}
+visits_per_pt_day <- df_pt_visits %>% group_by(hcwId, visitDay) %>% summarise(n_visits = n())
+ggplot(visits_per_pt_day, aes(x = n_visits)) +
+	geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+	geom_vline(aes(xintercept = mean(visits_per_pt_day$n_visits)), color = "blue", linetype = "dashed", size = 1) +
+	geom_vline(aes(xintercept = median(visits_per_pt_day$n_visits)), color = "red", linetype = "dotted", size = 1) +
+	labs(title = "Distribution of Number of Visits per Ward PT per Day",
+			 x = "Number of Visits",
+			 y = "Count (PT-Day pairs)",
+			 subtitle = "Blue dashed = mean, Red dotted = median") +
+	theme_minimal()
+min_pt_visits <- min(visits_per_pt_day$n_visits)
+max_pt_visits <- max(visits_per_pt_day$n_visits)
+mean_pt_visits <- mean(visits_per_pt_day$n_visits)
+median_pt_visits <- median(visits_per_pt_day$n_visits)
+```
+
+**Min visits per Ward PT per day:** `r min_pt_visits`
+**Max visits per Ward PT per day:** `r max_pt_visits`
+**Mean visits per Ward PT per day:** `r mean_pt_visits`
+**Median visits per Ward PT per day:** `r median_pt_visits`
+
+
+
+
+## Distribution of Number of Unique Patients Visited per Day by HCW Type (Ward)
+
+### Nurses (Ward)
+```{r}
+unique_patients_per_nurse_day <- df_nurse_visits %>% group_by(hcwId, visitDay) %>% summarise(n_unique_patients = n_distinct(patientId))
+ggplot(unique_patients_per_nurse_day, aes(x = n_unique_patients)) +
+	geom_histogram(binwidth = 1, fill = "green", color = "black") +
+	geom_vline(aes(xintercept = mean(n_unique_patients)), color = "blue", linetype = "dashed", size = 1) +
+	geom_vline(aes(xintercept = median(n_unique_patients)), color = "red", linetype = "dotted", size = 1) +
+	labs(title = "Distribution of Unique Ward Patients Visited per Nurse per Day",
+			 x = "Number of Unique Patients",
+			 y = "Count (Nurse-Day pairs)",
+			 subtitle = "Blue dashed = mean, Red dotted = median") +
+	theme_minimal()
+min_nurse_patients <- min(unique_patients_per_nurse_day$n_unique_patients)
+max_nurse_patients <- max(unique_patients_per_nurse_day$n_unique_patients)
+mean_nurse_patients <- mean(unique_patients_per_nurse_day$n_unique_patients)
+median_nurse_patients <- median(unique_patients_per_nurse_day$n_unique_patients)
+```
+
+**Min unique Ward patients per Nurse per day:** `r min_nurse_patients`
+**Max unique Ward patients per Nurse per day:** `r max_nurse_patients`
+**Mean unique Ward patients per Nurse per day:** `r mean_nurse_patients`
+**Median unique Ward patients per Nurse per day:** `r median_nurse_patients`
+
+## Unique Patients visited per day (Ward)
+### Doctors
+```{r}
+unique_patients_per_doctor_day <- df_doctor_visits %>% group_by(hcwId, visitDay) %>% summarise(n_unique_patients = n_distinct(patientId))
+ggplot(unique_patients_per_doctor_day, aes(x = n_unique_patients)) +
+	geom_histogram(binwidth = 1, fill = "orange", color = "black") +
+	geom_vline(aes(xintercept = mean(n_unique_patients)), color = "blue", linetype = "dashed", size = 1) +
+	geom_vline(aes(xintercept = median(n_unique_patients)), color = "red", linetype = "dotted", size = 1) +
+	labs(title = "Distribution of Unique Ward Patients Visited per Doctor per Day",
+			 x = "Number of Unique Patients",
+			 y = "Count (Doctor-Day pairs)",
+			 subtitle = "Blue dashed = mean, Red dotted = median") +
+	theme_minimal()
+min_doctor_patients <- min(unique_patients_per_doctor_day$n_unique_patients)
+max_doctor_patients <- max(unique_patients_per_doctor_day$n_unique_patients)
+mean_doctor_patients <- mean(unique_patients_per_doctor_day$n_unique_patients)
+median_doctor_patients <- median(unique_patients_per_doctor_day$n_unique_patients)
+```
+
+**Min unique Ward patients per Doctor per day:** `r min_doctor_patients`
+**Max unique Ward patients per Doctor per day:** `r max_doctor_patients`
+**Mean unique Ward patients per Doctor per day:** `r mean_doctor_patients`
+**Median unique Ward patients per Doctor per day:** `r median_doctor_patients`
+
+
+## Distribution of Number of Unique Healthcare Providers Seen by a Patient per Day (Ward)
+
+```{r}
+unique_providers_per_patient_day <- df2_filtered %>% group_by(patientId, visitDay) %>% summarise(n_unique_providers = n_distinct(hcwId))
+ggplot(unique_providers_per_patient_day, aes(x = n_unique_providers)) +
+	geom_histogram(binwidth = 1, fill = "gold", color = "black") +
+	geom_vline(aes(xintercept = mean(n_unique_providers)), color = "blue", linetype = "dashed", size = 1) +
+	geom_vline(aes(xintercept = median(n_unique_providers)), color = "red", linetype = "dotted", size = 1) +
+	labs(title = "Distribution of Unique Healthcare Providers Seen by a Ward Patient per Day",
+			 x = "Number of Unique Providers",
+			 y = "Count (Patient-Day pairs)",
+			 subtitle = "Blue dashed = mean, Red dotted = median") +
+	theme_minimal()
+min_patient_providers <- min(unique_providers_per_patient_day$n_unique_providers)
+max_patient_providers <- max(unique_providers_per_patient_day$n_unique_providers)
+mean_patient_providers <- mean(unique_providers_per_patient_day$n_unique_providers)
+median_patient_providers <- median(unique_providers_per_patient_day$n_unique_providers)
+```
+
+**Min unique providers per Ward patient per day:** `r min_patient_providers`
+**Max unique providers per Ward patient per day:** `r max_patient_providers`
+**Mean unique providers per Ward patient per day:** `r mean_patient_providers`
+**Median unique providers per Ward patient per day:** `r median_patient_providers`
+
