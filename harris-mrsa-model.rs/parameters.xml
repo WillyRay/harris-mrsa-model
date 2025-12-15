@@ -1,6 +1,75 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <parameters>
+					<parameter name="nurseHhAdherence" displayName="Nurse Hand Hygiene Adherence" type="double" 
+						defaultValue="0.5" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+				<parameter name="transmission_probability_hcw_to_patient" displayName="HCW to Patient Transmission Probability" type="double" 
+						defaultValue="0.4" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+				<parameter name="therapistHhAdherence" displayName="Therapist Hand Hygiene Adherence" type="double" 
+						defaultValue="0.5" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+				<parameter name="hhAdherenceBase" displayName="Base Hand Hygiene Adherence" type="double" 
+						defaultValue="0.5" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+				<parameter name="doctorHhAdherence" displayName="Doctor Hand Hygiene Adherence" type="double" 
+						defaultValue="0.5" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+				<parameter name="hhEfficacy" displayName="Hand Hygiene Efficacy" type="double" 
+						defaultValue="0.095" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+				<parameter name="hand_hygiene_efficacy" displayName="hand_hygiene_efficacy" type="double" 
+						defaultValue="0.95" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+				<parameter name="randomSeed" displayName="Default Random Seed" type="int" 
+						defaultValue="__NULL__"
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+											/>
+				<parameter name="therapistHhAdherencePost" displayName="Therapist Hand Hygiene Adherence Post" type="double" 
+						defaultValue="0.5" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+				<parameter name="glove_efficacy" displayName="Glove and Gown efficacy" type="double" 
+						defaultValue="0.5" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+				<parameter name="nurseHhAdherencePost" displayName="Nurse Hand Hygiene Adherence Post" type="double" 
+						defaultValue="0.5" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+				<parameter name="ppeAdherenceIfCp" displayName="PPE Adherence If Contact Precautions" type="double" 
+						defaultValue="0.65" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+				<parameter name="transmission_probability_patient_to_hcw" displayName="Patient to HCW transmission probability" type="double" 
+						defaultValue="0.4" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+				<parameter name="doctorHhAdherencePost" displayName="Doctor Hand Hygiene Adherence Post" type="double" 
+						defaultValue="0.5" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+											/>
+		</parameters>
 
-	<parameter name="randomSeed" displayName="Default Random Seed" type="int" defaultValue="__NULL__" />
 
-</parameters>

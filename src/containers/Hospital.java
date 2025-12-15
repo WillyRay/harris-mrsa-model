@@ -50,6 +50,7 @@ public class Hospital extends DefaultContext<Agent> {
     
     public StringBuffer visitData;
     public StringBuffer admissionData;
+    public StringBuffer tranmissionData;
 
     public Hospital(Builder builder, int bedCount, int icuBedCount) {
 	super();
@@ -60,6 +61,8 @@ public class Hospital extends DefaultContext<Agent> {
 	visitData.append("hcwId,hcwType,hcwDiseaseState,patientId,patientDiseaseState,patientLocation,visitTime\n");
 	this.admissionData = new StringBuffer();
 	this.admissionData.append("patientId,admitTime,icuAdmit,importation\n");
+	this.tranmissionData = new StringBuffer();
+	this.tranmissionData.append("time,patientId,hcwId,hcwType,location");
 
 	
 	this.dischargedPatients = new ArrayList<DischargedPatient>();

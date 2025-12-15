@@ -12,6 +12,7 @@ import repast.simphony.dataLoader.ContextBuilder;
 import repast.simphony.engine.environment.RunEnvironment;
 import repast.simphony.engine.schedule.ISchedule;
 import repast.simphony.engine.schedule.ScheduledMethod;
+import repast.simphony.parameter.Parameters;
 import repast.simphony.space.graph.Network;
 import agents.Agent;
 import agents.DischargedPatient;
@@ -39,7 +40,7 @@ import org.apache.commons.math3.distribution.LogNormalDistribution;
 
 public class Builder implements ContextBuilder<Object> {
 	
-    	
+    	private Parameters params;
 	ISchedule schedule ;
 	Hospital hospital;
 	Admission admissionProcess;
@@ -101,17 +102,18 @@ public class Builder implements ContextBuilder<Object> {
 	private double icuRtsPerPatient = 0.1;
 	
 	//transmission parameters
-	private double cleanPtColonizeddHcwColonizationProb = defaultDouble;
-	private double contaminedPtCleanHcwColonizationProb = defaultDouble;
-	
-	private double hhAdherenceBase = 0.5;
-	private double nurseHhAdherence = hhAdherenceBase;
-	private double doctorHhAdherence = hhAdherenceBase;
-	private double therapistHhAdherence = hhAdherenceBase;
-	private double nurseHhAdherencePost = hhAdherenceBase;
-	private double doctorHhAdherencePost = hhAdherenceBase;
-	private double therapistHhAdherencePost = hhAdherenceBase;
-	private double ppeAdherenceIfCp = 0.5;
+	private double cleanPtColonizeddHcwColonizationProb = 0.4;
+	private double contaminedPtCleanHcwColonizationProb = 0.4;
+	private double hhEfficacy; //efficacy of hand hygiene
+
+	private double hhAdherenceBase;
+	private double nurseHhAdherence;
+	private double doctorHhAdherence;
+	private double therapistHhAdherence;
+	private double nurseHhAdherencePost;
+	private double doctorHhAdherencePost;
+	private double therapistHhAdherencePost;
+	private double ppeAdherenceIfCp;
 	
 	
 	
@@ -179,6 +181,14 @@ public class Builder implements ContextBuilder<Object> {
 	         e.printStackTrace();
 	     }
 	     
+	     //print the hospital.transmissionData StringBuffer to a file
+	     try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter("transmission_data.txt", false))) {
+	         writer.write(hospital.tranmissionData.toString());
+	         writer.newLine();
+	     } catch (IOException e) {
+	         e.printStackTrace();
+	     }
+	     
 	     
 	 }
 	 
@@ -193,8 +203,20 @@ public class Builder implements ContextBuilder<Object> {
 		    
 	
 	   
-	    	
-		schedule = repast.simphony.engine.environment.RunEnvironment.getInstance().getCurrentSchedule();
+	    	params = RunEnvironment.getInstance().getParameters();
+		schedule = RunEnvironment.getInstance().getCurrentSchedule();
+		
+	
+		hhEfficacy = params.getDouble("hhEfficacy"); //efficacy of hand hygiene
+
+		hhAdherenceBase = params.getDouble("hhAdherenceBase");
+		nurseHhAdherence = params.getDouble("nurseHhAdherence");
+		doctorHhAdherence = params.getDouble("doctorHhAdherence");
+		therapistHhAdherence = params.getDouble("therapistHhAdherence");
+		nurseHhAdherencePost = params.getDouble("nurseHhAdherencePost");
+		doctorHhAdherencePost = params.getDouble("doctorHhAdherencePost");
+		therapistHhAdherencePost = params.getDouble("therapistHhAdherencePost");
+		ppeAdherenceIfCp = params.getDouble("ppeAdherenceIfCp");
 		
 		//WRR: Create a hospital with 90 beds.
 		hospital = new Hospital(this, hospitalCapacity, icuCapacity);
@@ -207,11 +229,7 @@ public class Builder implements ContextBuilder<Object> {
 		buildHealthCareWorkers();
 		
 		
-		
-		NetworkBuilder networkBuilder = new NetworkBuilder("icu", context, true);
-		Network icuNetwork = networkBuilder.buildNetwork();
-		networkBuilder = new NetworkBuilder("wards", context, true);
-		Network wardsNetwork = networkBuilder.buildNetwork();
+	
 		
 		
 		return context;
@@ -221,7 +239,7 @@ public class Builder implements ContextBuilder<Object> {
 	private void buildHealthCareWorkers() {
 	      
 	    for (int i = 0; i<(hospitalCapacity-icuCapacity)*physiciansPerPatient; i++) {
-		Doctor doc1 = new Doctor(HcwType.DOCTOR, hospital);
+		Doctor doc1 = new Doctor(HcwType.DOCTOR, hospital, doctorHhAdherence, doctorHhAdherencePost, ppeAdherenceIfCp);
 		doc1.setHandHygieneCompliance(doctorHhAdherence);
 		doc1.setHandHygieneCompliancePost(doctorHhAdherencePost);
 		doc1.setGloveCompliance(ppeAdherenceIfCp);
@@ -236,7 +254,7 @@ public class Builder implements ContextBuilder<Object> {
 	    }
 	    
 	    for (int i = 0; i<icuCapacity*icuPhysiciansPerPatient; i++) {
-		Doctor doc1 = new Doctor(HcwType.DOCTOR, hospital);
+		Doctor doc1 = new Doctor(HcwType.DOCTOR, hospital, doctorHhAdherence, doctorHhAdherencePost, ppeAdherenceIfCp);
 		doc1.setHandHygieneCompliance(doctorHhAdherence);
 		doc1.setHandHygieneCompliancePost(doctorHhAdherencePost);
 		doc1.setGloveCompliance(ppeAdherenceIfCp);
@@ -251,7 +269,7 @@ public class Builder implements ContextBuilder<Object> {
 	    }
 	    
 	    for (int i = 0; i<(hospitalCapacity-icuCapacity)*nursesPerPatient; i++) {
-            Nurse nurse = new Nurse(HcwType.NURSE, hospital);
+            Nurse nurse = new Nurse(HcwType.NURSE, hospital, nurseHhAdherence, nurseHhAdherencePost, ppeAdherenceIfCp);
             nurse.setHandHygieneCompliance(nurseHhAdherence);
             nurse.setHandHygieneCompliancePost(nurseHhAdherencePost);
             nurse.setGloveCompliance(ppeAdherenceIfCp);
@@ -265,7 +283,7 @@ public class Builder implements ContextBuilder<Object> {
 	    }
 	    
 	    for (int i = 0; i< (icuCapacity)*icuNursesPerPatient; i++) {
-	            Nurse nurse = new Nurse(HcwType.NURSE, hospital);
+	            Nurse nurse = new Nurse(HcwType.NURSE, hospital, nurseHhAdherence, nurseHhAdherencePost, ppeAdherenceIfCp);
 	            nurse.setHandHygieneCompliance(nurseHhAdherence);
 	            nurse.setHandHygieneCompliancePost(nurseHhAdherencePost);
 	            nurse.setGloveCompliance(ppeAdherenceIfCp);
@@ -280,7 +298,7 @@ public class Builder implements ContextBuilder<Object> {
 	    //IcuRts
 	    for (int i = 0; i< (icuCapacity)*icuRtsPerPatient; i++) {
 	            //Nurse nurse = new Nurse(HcwType.NURSE, hospital);
-	            IcuRt icuRt = new IcuRt(HcwType.ICURT, hospital);	
+	            IcuRt icuRt = new IcuRt(HcwType.ICURT, hospital, therapistHhAdherence, therapistHhAdherencePost, ppeAdherenceIfCp);	
 	            icuRt.setHandHygieneCompliance(therapistHhAdherence);
 	            icuRt.setHandHygieneCompliancePost(therapistHhAdherencePost);
 	            icuRt.setGloveCompliance(ppeAdherenceIfCp);
@@ -296,7 +314,7 @@ public class Builder implements ContextBuilder<Object> {
 		    
 	    
 	    for (int i = 0; i<hospitalCapacity*rtsPerPatient; i++) {
-		Therapist hcw  = new Therapist(HcwType.RT, hospital);
+		Therapist hcw  = new Therapist(HcwType.RT, hospital, therapistHhAdherence, therapistHhAdherencePost, ppeAdherenceIfCp);
 		hcw.setHandHygieneCompliance(therapistHhAdherence);
 		hcw.setHandHygieneCompliancePost(therapistHhAdherencePost);
 		hcw.setGloveCompliance(ppeAdherenceIfCp);
@@ -308,7 +326,7 @@ public class Builder implements ContextBuilder<Object> {
 	    }
 	    
 	    for (int i = 0; i<hospitalCapacity*ptsPerPatient; i++) {
-		Therapist hcw  = new Therapist(HcwType.PT, hospital);
+		Therapist hcw  = new Therapist(HcwType.PT, hospital, therapistHhAdherence, therapistHhAdherencePost, ppeAdherenceIfCp);
 		hcw.setHandHygieneCompliance(therapistHhAdherence);
 		hcw.setHandHygieneCompliancePost(therapistHhAdherencePost);
 		hcw.setGloveCompliance(ppeAdherenceIfCp);
@@ -320,7 +338,7 @@ public class Builder implements ContextBuilder<Object> {
 	    }
 	    
 	    for (int i = 0; i<hospitalCapacity*otsPerPatient; i++) {
-		Therapist hcw  = new Therapist(HcwType.OT, hospital);
+		Therapist hcw  = new Therapist(HcwType.OT, hospital, therapistHhAdherence, therapistHhAdherencePost, ppeAdherenceIfCp);
 		hcw.setHandHygieneCompliance(therapistHhAdherence);
 		hcw.setGloveCompliance(ppeAdherenceIfCp);
 		hcw.setNeedsArray(hospital.patientsNeedingOt);

@@ -8,8 +8,8 @@ import repast.simphony.space.graph.Network;
 
 public class IcuRt extends HealthCareWorker {
 
-    public IcuRt(HcwType hcwtype, Hospital hospital) {
-	super(hcwtype, hospital);
+    public IcuRt(HcwType hcwtype, Hospital hospital, double hhPre, double hhPost, double ppe) {
+	super(hcwtype, hospital, hhPre, hhPost, ppe);
 	// TODO Auto-generated constructor stub
     }
 

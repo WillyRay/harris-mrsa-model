@@ -7,8 +7,8 @@ public class Nurse extends HealthCareWorker {
     
 
     
-    public Nurse(HcwType hcwtype, Hospital hospital) {
-	super(hcwtype, hospital);
+    public Nurse(HcwType hcwtype, Hospital hospital, double hhPre, double hhPost, double ppe) {
+	super(hcwtype, hospital,  hhPre,  hhPost,  ppe);
 	// TODO Auto-generated constructor stub
     }
     

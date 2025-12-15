@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.24">
+<meta name="generator" content="quarto-1.7.32">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -26,15 +26,14 @@ ul.task-list li input[type="checkbox"] {
 <script src="description_files/libs/clipboard/clipboard.min.js"></script>
 <script src="description_files/libs/quarto-html/quarto.js" type="module"></script>
 <script src="description_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="description_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="description_files/libs/quarto-html/popper.min.js"></script>
 <script src="description_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="description_files/libs/quarto-html/anchor.min.js"></script>
 <link href="description_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="description_files/libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="description_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="description_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="description_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="description_files/libs/bootstrap/bootstrap-9e3ffae467580fdb927a41352e75a2e0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="description_files/libs/bootstrap/bootstrap-bb462d781dde1847d9e3ccf7736099dd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
 
 </head>
@@ -52,45 +51,53 @@ ul.task-list li input[type="checkbox"] {
 <h1>Harris MRSA Model - Comprehensive Description</h1>
 <section id="overview" class="level2">
 <h2 class="anchored" data-anchor-id="overview">Overview</h2>
-<p>This is an Agent-Based Model (ABM) simulating MRSA transmission dynamics in a hospital setting. The model tracks patient admissions, discharges, transfers between ICU and ward, healthcare worker (HCW) visits to patients, and potential disease transmission during these interactions.</p>
+<p>This is an Agent-Based Model (ABM) simulating MRSA transmission dynamics in a hospital setting. The model tracks patient admissions, discharges, transfers between ICU and ward, healthcare worker (HCW) visits to patients.</p>
+</section>
+<section id="next-steps" class="level2">
+<h2 class="anchored" data-anchor-id="next-steps">Next Steps</h2>
+<ul>
+<li>finish visit process including transmission to patient, from patient.</li>
+<li>finish disease model especially transitions from C to I, I to R</li>
+<li>address death vs.&nbsp;discharge</li>
+</ul>
 </section>
 <section id="model-entry-point-and-initialization" class="level2">
 <h2 class="anchored" data-anchor-id="model-entry-point-and-initialization">Model Entry Point and Initialization</h2>
 <section id="builder.build---the-main-entry-point" class="level3">
 <h3 class="anchored" data-anchor-id="builder.build---the-main-entry-point">Builder.build() - The Main Entry Point</h3>
-<p>The simulation begins when Repast Simphony calls <code>Builder.build(Context&lt;Object&gt; context)</code> (Builder.java:190). This method orchestrates the entire initialization process.</p>
+<p>The simulation begins when Repast Simphony calls <code>Builder.build(Context&lt;Object&gt; context)</code>. This method orchestrates the entire initialization process.</p>
 <p><strong>Step-by-step initialization:</strong></p>
 <ol type="1">
-<li><p><strong>Get the Simulation Schedule</strong> (line 197)</p>
+<li><p><strong>Get the Simulation Schedule</strong></p>
 <ul>
 <li>Retrieves the Repast Simphony schedule that manages all time-based events</li>
-<li>The schedule uses “ticks” as time units, where 1 tick = 1 day</li>
+<li>The schedule represents time as a double precision numeric. Each day is <strong><code>1</code></strong> unit, and events may be scheduled at any point between one “tick” and the next. <strong><code>10.0</code></strong> is the beginning of the 10th day. <strong><code>10.5</code></strong> is the middle of the 10th day.</li>
 </ul></li>
-<li><p><strong>Create the Hospital</strong> (line 200)</p>
+<li><p><strong>Create the Hospital</strong></p>
 <ul>
 <li>Creates the main <code>Hospital</code> object with configured capacity</li>
-<li>Hospital capacity: 120 beds total (configurable via <code>hospitalCapacity</code>)</li>
-<li>ICU capacity: 20 beds (configurable via <code>icuCapacity</code>)</li>
-<li>Ward capacity: 100 beds (hospitalCapacity - icuCapacity)</li>
+<li>Hospital capacity: <strong><code>120</code></strong> beds total (configurable via <code>hospitalCapacity</code>)</li>
+<li>ICU capacity: <strong><code>20</code></strong> beds (configurable via <code>icuCapacity</code>)</li>
+<li>Ward capacity: <strong><code>100</code></strong> beds (hospitalCapacity - icuCapacity)</li>
 <li>The Hospital is added to the simulation context</li>
 </ul></li>
-<li><p><strong>Initialize Hospital Internal State</strong> (Hospital.java:54-83) During Hospital construction, the following are initialized:</p>
+<li><p><strong>Initialize Hospital Internal State</strong> During Hospital construction, the following are initialized:</p>
 <ul>
-<li><strong>Patient tracking lists:</strong>
+<li><strong>Patient containers:</strong>
 <ul>
-<li><code>patients</code> - all patients in the hospital</li>
+<li><code>patients</code> - all patients currently in the hospital</li>
 <li><code>inIcu</code> - patients currently in ICU</li>
 <li><code>notInIcu</code> - patients currently in ward</li>
 <li><code>patientsNeedingOt/Pt/Rt</code> - patients requiring therapy visits</li>
 </ul></li>
 <li><strong>Discharge processes:</strong>
 <ul>
-<li><code>icuDischarger</code> - handles ICU patient discharges using LogNormal(scale=0.820, shape=0.916)</li>
-<li><code>nonIcuDischarger</code> - handles ward patient discharges using LogNormal(scale=0.768, shape=1.253)</li>
+<li><code>icuDischarger</code> - handles ICU patient discharges using LogNormal(scale=<strong><code>0.820</code></strong>, shape=<strong><code>0.916</code></strong>)</li>
+<li><code>nonIcuDischarger</code> - handles ward patient discharges using LogNormal(scale=<strong><code>0.768</code></strong>, shape=<strong><code>1.253</code></strong>)</li>
 </ul></li>
 <li><strong>Transfer process:</strong>
 <ul>
-<li><code>transferer</code> - handles ICU-to-Ward transfers using LogNormal(scale=1.0, shape=0.5)</li>
+<li><code>transferer</code> - handles ICU-to-Ward transfers using LogNormal(scale=<strong><code>1.0</code></strong>, shape=<strong><code>0.5</code></strong>)</li>
 </ul></li>
 <li><strong>Data collection buffers:</strong>
 <ul>
@@ -103,23 +110,23 @@ ul.task-list li input[type="checkbox"] {
 <li><code>hospitalnet</code> - network tracking which HCWs are assigned to which patients</li>
 </ul></li>
 </ul></li>
-<li><p><strong>Start the Admission Process</strong> (Builder.java:202-203)</p>
+<li><p><strong>Start the Admission Process</strong></p>
 <ul>
-<li>Creates an <code>Admission</code> process with mean inter-arrival time of 0.05 days</li>
+<li>Creates an <code>Admission</code> process with mean inter-arrival time of <strong><code>0.05</code></strong> days</li>
 <li>The admission process uses an Exponential distribution</li>
 <li><code>admissionProcess.start()</code> schedules the first admission event</li>
 </ul></li>
-<li><p><strong>Schedule the Builder’s Recurring Methods</strong> (line 204)</p>
+<li><p><strong>Schedule the Builder’s Recurring Methods</strong></p>
 <ul>
-<li>Schedules <code>Builder.daily()</code> to run every 1.0 tick starting at tick 1.0</li>
-<li>Schedules <code>Builder.perShiftOperations()</code> to run every 0.5 ticks starting at tick 0.5</li>
-<li>Schedules <code>Builder.endOfRun()</code> to run once at tick 365</li>
+<li>Schedules <code>Builder.daily()</code> to run every <strong><code>1.0</code></strong> tick starting at tick <strong><code>1.0</code></strong></li>
+<li>Schedules <code>Builder.perShiftOperations()</code> to run every <strong><code>0.5</code></strong> ticks starting at tick <strong><code>0.5</code></strong></li>
+<li>Schedules <code>Builder.endOfRun()</code> to run once at tick <strong><code>365</code></strong></li>
 </ul></li>
-<li><p><strong>Build All Healthcare Workers</strong> (line 207)</p>
+<li><p><strong>Build All Healthcare Workers</strong></p>
 <ul>
 <li>Calls <code>buildHealthCareWorkers()</code> to create the HCW workforce</li>
 </ul></li>
-<li><p><strong>Create Networks</strong> (lines 211-214)</p>
+<li><p><strong>Create Networks</strong></p>
 <ul>
 <li>Creates two network structures for visualization/analysis (ICU and wards)</li>
 </ul></li>
@@ -128,141 +135,141 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="healthcare-worker-creation" class="level2">
 <h2 class="anchored" data-anchor-id="healthcare-worker-creation">Healthcare Worker Creation</h2>
-<p>The <code>buildHealthCareWorkers()</code> method (Builder.java:221-332) creates all HCWs and assigns each a PatientVisit process:</p>
-<section id="ward-doctors-lines-223-236" class="level3">
-<h3 class="anchored" data-anchor-id="ward-doctors-lines-223-236">Ward Doctors (lines 223-236)</h3>
+<p>The <code>buildHealthCareWorkers()</code> method creates all HCWs and assigns each a PatientVisit process:</p>
+<section id="ward-doctors" class="level3">
+<h3 class="anchored" data-anchor-id="ward-doctors">Ward Doctors</h3>
 <ul>
-<li><strong>Count:</strong> (hospitalCapacity - icuCapacity) × physiciansPerPatient = 100 × 0.2 = 20 doctors</li>
+<li><strong>Count:</strong> (hospitalCapacity - icuCapacity) × physiciansPerPatient = <strong><code>100</code></strong> × <strong><code>0.2</code></strong> = <strong><code>20</code></strong> doctors</li>
 <li><strong>Type:</strong> DOCTOR</li>
 <li><strong>Visit pattern:</strong> Each doctor gets a PatientVisit process that:
 <ul>
-<li>Uses Gamma(shape=0.52, scale=90.7) distribution for inter-visit intervals (in minutes)</li>
-<li>Adds 6.6 minutes for room visit duration</li>
+<li>Uses Gamma(shape=<strong><code>0.52</code></strong>, scale=<strong><code>90.7</code></strong>) distribution for inter-visit intervals (in minutes)</li>
+<li>Adds <strong><code>6.6</code></strong> minutes for room visit duration</li>
 <li>Starts immediately with <code>pv.start()</code></li>
 </ul></li>
 <li><strong>Infection control attributes:</strong>
 <ul>
-<li>Hand hygiene compliance (pre-visit): 0.5</li>
-<li>Hand hygiene compliance (post-visit): 0.5</li>
-<li>PPE/glove compliance: 0.5</li>
+<li>Hand hygiene compliance (pre-visit): <strong><code>0.5</code></strong></li>
+<li>Hand hygiene compliance (post-visit): <strong><code>0.5</code></strong></li>
+<li>PPE/glove compliance: <strong><code>0.5</code></strong></li>
 </ul></li>
 <li><strong>Assignment:</strong> Added to <code>wardContext</code> with <code>icu=false</code></li>
 </ul>
 </section>
-<section id="icu-doctors-lines-238-251" class="level3">
-<h3 class="anchored" data-anchor-id="icu-doctors-lines-238-251">ICU Doctors (lines 238-251)</h3>
+<section id="icu-doctors" class="level3">
+<h3 class="anchored" data-anchor-id="icu-doctors">ICU Doctors</h3>
 <ul>
-<li><strong>Count:</strong> icuCapacity × icuPhysiciansPerPatient = 20 × 0.3 = 6 doctors</li>
+<li><strong>Count:</strong> icuCapacity × icuPhysiciansPerPatient = <strong><code>20</code></strong> × <strong><code>0.3</code></strong> = <strong><code>6</code></strong> doctors</li>
 <li><strong>Type:</strong> DOCTOR</li>
 <li><strong>Visit pattern:</strong>
 <ul>
-<li>Uses Gamma(shape=0.52, scale=35.3) distribution (shorter intervals than ward)</li>
+<li>Uses Gamma(shape=<strong><code>0.52</code></strong>, scale=<strong><code>35.3</code></strong>) distribution (shorter intervals than ward)</li>
 <li>Starts immediately</li>
 </ul></li>
 <li><strong>Assignment:</strong> Added to <code>icuContext</code> with <code>icu=true</code></li>
 </ul>
 </section>
-<section id="ward-nurses-lines-253-265" class="level3">
-<h3 class="anchored" data-anchor-id="ward-nurses-lines-253-265">Ward Nurses (lines 253-265)</h3>
+<section id="ward-nurses" class="level3">
+<h3 class="anchored" data-anchor-id="ward-nurses">Ward Nurses</h3>
 <ul>
-<li><strong>Count:</strong> (hospitalCapacity - icuCapacity) × nursesPerPatient = 100 × 0.2 = 20 nurses</li>
+<li><strong>Count:</strong> (hospitalCapacity - icuCapacity) × nursesPerPatient = <strong><code>100</code></strong> × <strong><code>0.2</code></strong> = <strong><code>20</code></strong> nurses</li>
 <li><strong>Type:</strong> NURSE</li>
 <li><strong>Visit pattern:</strong>
 <ul>
-<li>Uses Gamma(shape=0.54, scale=55.1) distribution</li>
+<li>Uses Gamma(shape=<strong><code>0.54</code></strong>, scale=<strong><code>55.1</code></strong>) distribution</li>
 <li>Starts immediately</li>
 </ul></li>
 <li><strong>Assignment:</strong> Added to <code>wardContext</code> with <code>icu=false</code></li>
 </ul>
 </section>
-<section id="icu-nurses-lines-267-279" class="level3">
-<h3 class="anchored" data-anchor-id="icu-nurses-lines-267-279">ICU Nurses (lines 267-279)</h3>
+<section id="icu-nurses" class="level3">
+<h3 class="anchored" data-anchor-id="icu-nurses">ICU Nurses</h3>
 <ul>
-<li><strong>Count:</strong> icuCapacity × icuNursesPerPatient = 20 × 0.5 = 10 nurses</li>
+<li><strong>Count:</strong> icuCapacity × icuNursesPerPatient = <strong><code>20</code></strong> × <strong><code>0.5</code></strong> = <strong><code>10</code></strong> nurses</li>
 <li><strong>Type:</strong> NURSE</li>
 <li><strong>Visit pattern:</strong>
 <ul>
-<li>Uses Gamma(shape=0.54, scale=20) distribution (much more frequent visits)</li>
-<li>Visit check interval: 1/3 day (8 hours)</li>
+<li>Uses Gamma(shape=<strong><code>0.54</code></strong>, scale=<strong><code>20</code></strong>) distribution (much more frequent visits)</li>
+<li>Visit check interval: <strong><code>1/3</code></strong> day (<strong><code>8</code></strong> hours)</li>
 </ul></li>
 <li><strong>Assignment:</strong> Added to <code>icuContext</code> with <code>icu=true</code></li>
 </ul>
 </section>
-<section id="icu-respiratory-therapists-lines-281-294" class="level3">
-<h3 class="anchored" data-anchor-id="icu-respiratory-therapists-lines-281-294">ICU Respiratory Therapists (lines 281-294)</h3>
+<section id="icu-respiratory-therapists" class="level3">
+<h3 class="anchored" data-anchor-id="icu-respiratory-therapists">ICU Respiratory Therapists</h3>
 <ul>
-<li><strong>Count:</strong> icuCapacity × icuRtsPerPatient = 20 × 0.1 = 2 ICU RTs</li>
+<li><strong>Count:</strong> icuCapacity × icuRtsPerPatient = <strong><code>20</code></strong> × <strong><code>0.1</code></strong> = <strong><code>2</code></strong> ICU RTs</li>
 <li><strong>Type:</strong> ICURT</li>
 <li><strong>Visit pattern:</strong>
 <ul>
-<li>Uses Gamma(shape=0.54, scale=20) distribution</li>
-<li>Visit check interval: 1/3 day</li>
+<li>Uses Gamma(shape=<strong><code>0.54</code></strong>, scale=<strong><code>20</code></strong>) distribution</li>
+<li>Visit check interval: <strong><code>1/3</code></strong> day</li>
 </ul></li>
 <li><strong>Assignment:</strong> Added to <code>icuContext</code> with <code>icu=true</code></li>
 </ul>
 </section>
-<section id="ward-therapists-lines-298-331" class="level3">
-<h3 class="anchored" data-anchor-id="ward-therapists-lines-298-331">Ward Therapists (lines 298-331)</h3>
-<p>All three types (RT, PT, OT) currently have staffing ratios set to 0.1 (default), so: - <strong>Respiratory Therapists (RT):</strong> hospitalCapacity × 0.1 = 12 RTs - <strong>Physical Therapists (PT):</strong> hospitalCapacity × 0.1 = 12 PTs - <strong>Occupational Therapists (OT):</strong> hospitalCapacity × 0.1 = 12 OTs</p>
-<p><strong>Key difference for therapists:</strong> - They visit patients from specific “needs” lists: <code>hospital.patientsNeedingRt/Pt/Ot</code> - Visit pattern: Gamma(shape=0.62, scale=61.7) distribution</p>
+<section id="ward-therapists" class="level3">
+<h3 class="anchored" data-anchor-id="ward-therapists">Ward Therapists</h3>
+<p>All three types (RT, PT, OT) currently have staffing ratios set to <strong><code>0.1</code></strong> (default), so: - <strong>Respiratory Therapists (RT):</strong> hospitalCapacity × <strong><code>0.1</code></strong> = <strong><code>12</code></strong> RTs - <strong>Physical Therapists (PT):</strong> hospitalCapacity × <strong><code>0.1</code></strong> = <strong><code>12</code></strong> PTs - <strong>Occupational Therapists (OT):</strong> hospitalCapacity × <strong><code>0.1</code></strong> = <strong><code>12</code></strong> OTs</p>
+<p><strong>Key difference for therapists:</strong> - They visit patients from specific “needs” lists: <code>hospital.patientsNeedingRt/Pt/Ot</code> - Visit pattern: Gamma(shape=<strong><code>0.62</code></strong>, scale=<strong><code>61.7</code></strong>) distribution</p>
 </section>
 </section>
 <section id="simulation-execution---the-event-loop" class="level2">
 <h2 class="anchored" data-anchor-id="simulation-execution---the-event-loop">Simulation Execution - The Event Loop</h2>
-<p>Once initialization completes, the Repast Simphony scheduler begins executing events. The simulation runs for 365 ticks (days).</p>
+<p>Once initialization completes, the Repast Simphony scheduler begins executing events. The simulation runs for <strong><code>365</code></strong> ticks (days).</p>
 <section id="recurring-scheduled-events" class="level3">
 <h3 class="anchored" data-anchor-id="recurring-scheduled-events">Recurring Scheduled Events</h3>
-<section id="builder.pershiftoperations---every-0.5-ticks-builder.java136-139" class="level4">
-<h4 class="anchored" data-anchor-id="builder.pershiftoperations---every-0.5-ticks-builder.java136-139">1. Builder.perShiftOperations() - Every 0.5 Ticks (Builder.java:136-139)</h4>
-<p><strong>When:</strong> Runs at ticks 0.5, 1.0, 1.5, 2.0, etc. (twice per day, representing shift changes)</p>
+<section id="builder.pershiftoperations---every-0.5-ticks" class="level4">
+<h4 class="anchored" data-anchor-id="builder.pershiftoperations---every-0.5-ticks">1. Builder.perShiftOperations() - Every 0.5 Ticks</h4>
+<p><strong>When:</strong> Runs at ticks <strong><code>0.5</code></strong>, <strong><code>1.0</code></strong>, <strong><code>1.5</code></strong>, <strong><code>2.0</code></strong>, etc. (twice per day, representing shift changes)</p>
 <p><strong>What it does:</strong> - Calls <code>hospital.setPatientNurseAssignments()</code> to reassign nurses to patients</p>
-<p><strong>Nurse Assignment Algorithm (Hospital.java:205-296):</strong></p>
+<p><strong>Nurse Assignment Algorithm:</strong></p>
 <ol type="1">
-<li><p><strong>Clear all existing nurse-patient assignments</strong> (lines 206-223)</p>
+<li><p><strong>Clear all existing nurse-patient assignments</strong></p>
 <ul>
 <li>Removes all edges in the hospital network between nurses and patients</li>
 <li>Doctor-patient assignments remain intact</li>
 </ul></li>
-<li><p><strong>For each patient in the hospital</strong> (line 225):</p>
+<li><p><strong>For each patient in the hospital:</strong></p>
 <ol type="a">
-<li><strong>Get appropriate nurse pool</strong> (lines 229-239)
+<li><strong>Get appropriate nurse pool</strong>
 <ul>
 <li>If patient is in Ward: get all ward nurses from <code>wardContext</code></li>
 <li>If patient is in ICU: get all ICU nurses from <code>icuContext</code></li>
 </ul></li>
-<li><strong>Sort nurses by current workload</strong> (line 246)
+<li><strong>Sort nurses by current workload</strong>
 <ul>
 <li>Nurses are sorted by their network degree (number of assigned patients)</li>
 <li>This implements load balancing</li>
 </ul></li>
-<li><strong>Find nurses with minimum workload</strong> (lines 248-254)
+<li><strong>Find nurses with minimum workload</strong>
 <ul>
 <li>Find the minimum degree among available nurses</li>
 <li>Create list of all nurses tied for minimum degree</li>
 </ul></li>
-<li><strong>Assign two nurses to the patient</strong> (lines 256-293)
+<li><strong>Assign two nurses to the patient</strong>
 <ul>
-<li>If 2+ nurses tied for minimum: randomly select 2</li>
-<li>If only 1 nurse at minimum: assign that nurse, then find next-lowest workload nurse</li>
+<li>If <strong><code>2</code></strong>+ nurses tied for minimum: randomly select <strong><code>2</code></strong></li>
+<li>If only <strong><code>1</code></strong> nurse at minimum: assign that nurse, then find next-lowest workload nurse</li>
 <li>Creates edges in <code>hospitalnet</code> connecting nurses to patient</li>
-<li>Ensures each patient has 2 nurse assignments (when possible)</li>
+<li>Ensures each patient has <strong><code>2</code></strong> nurse assignments (when possible)</li>
 </ul></li>
 </ol></li>
 </ol>
 </section>
-<section id="builder.daily---every-1.0-tick-builder.java132-135" class="level4">
-<h4 class="anchored" data-anchor-id="builder.daily---every-1.0-tick-builder.java132-135">2. Builder.daily() - Every 1.0 Tick (Builder.java:132-135)</h4>
-<p><strong>When:</strong> Runs at ticks 1.0, 2.0, 3.0, etc. (once per day)</p>
+<section id="builder.daily---every-1.0-tick" class="level4">
+<h4 class="anchored" data-anchor-id="builder.daily---every-1.0-tick">2. Builder.daily() - Every 1.0 Tick</h4>
+<p><strong>When:</strong> Runs at ticks <strong><code>1.0</code></strong>, <strong><code>2.0</code></strong>, <strong><code>3.0</code></strong>, etc. (once per day)</p>
 <p><strong>What it does:</strong> - Calls <code>hospital.resetTherapyNeeds()</code> to refresh therapy assignment lists</p>
-<p><strong>Therapy Needs Reset (Hospital.java:331-354):</strong></p>
+<p><strong>Therapy Needs Reset:</strong></p>
 <ol type="1">
-<li><strong>Clear existing therapy lists</strong> (lines 332-341)
+<li><strong>Clear existing therapy lists</strong>
 <ul>
 <li><code>patientsNeedingOt.clear()</code></li>
 <li><code>patientsNeedingPt.clear()</code></li>
 <li><code>patientsNeedingRt.clear()</code></li>
 </ul></li>
-<li><strong>Rebuild therapy lists from current patient population</strong> (lines 343-353)
+<li><strong>Rebuild therapy lists from current patient population</strong>
 <ul>
 <li>Loop through all current patients</li>
 <li>If <code>patient.needsOt</code> is true, add to <code>patientsNeedingOt</code></li>
@@ -276,119 +283,119 @@ ul.task-list li input[type="checkbox"] {
 <section id="stochastic-event-processes" class="level3">
 <h3 class="anchored" data-anchor-id="stochastic-event-processes">Stochastic Event Processes</h3>
 <p>In addition to the regular scheduled methods, several stochastic processes fire at random intervals:</p>
-<section id="admission-process-admission.java" class="level4">
-<h4 class="anchored" data-anchor-id="admission-process-admission.java">3. Admission Process (Admission.java)</h4>
-<p><strong>Frequency:</strong> Exponential(0.05) distribution - mean of 0.05 days (~72 minutes) between admissions</p>
+<section id="admission-process" class="level4">
+<h4 class="anchored" data-anchor-id="admission-process">3. Admission Process</h4>
+<p><strong>Frequency:</strong> Exponential(<strong><code>0.05</code></strong>) distribution - mean of <strong><code>0.05</code></strong> days (~<strong><code>72</code></strong> minutes) between admissions</p>
 <p><strong>Process flow:</strong></p>
 <ol type="1">
-<li><p><strong>Fire event</strong> (Admission.java:37-41)</p>
+<li><p><strong>Fire event</strong></p>
 <ul>
 <li>Increments total admissions counter</li>
 <li>Calls <code>hospital.createAndAdmitPatient()</code></li>
 <li>Reschedules itself for next admission</li>
 </ul></li>
-<li><p><strong>Create and Admit Patient</strong> (Hospital.java:87-152)</p>
-<p><strong>Capacity check</strong> (line 88)</p>
+<li><p><strong>Create and Admit Patient</strong></p>
+<p><strong>Capacity check</strong></p>
 <ul>
-<li>Only admit if <code>patients.size() &lt; bedCount</code> (120)</li>
+<li>Only admit if <code>patients.size() &lt; bedCount</code> (<strong><code>120</code></strong>)</li>
 </ul>
-<p><strong>Patient creation</strong> (line 89)</p>
+<p><strong>Patient creation</strong></p>
 <ul>
 <li>Create new <code>Patient()</code> object</li>
 <li>Patient gets unique <code>agentId</code> from Agent base class</li>
 <li>Patient gets new <code>AgentDisease</code> object tracking disease state</li>
 </ul>
-<p><strong>ICU vs Ward admission</strong> (line 91-92)</p>
+<p><strong>ICU vs Ward admission</strong></p>
 <ul>
-<li>Random draw: probability <code>icuAdmitProbability</code> (0.15)</li>
+<li>Random draw: probability <code>icuAdmitProbability</code> (<strong><code>0.15</code></strong>)</li>
 <li>Additional check for ICU: ICU must have available beds (<code>inIcu.size() &lt; icuBedCount</code>)</li>
-<li><strong>Default:</strong> 85% of admissions go to Ward</li>
+<li><strong>Default:</strong> <strong><code>85%</code></strong> of admissions go to Ward</li>
 </ul>
-<p><strong>If admitted to Ward</strong> (lines 116-137):</p>
+<p><strong>If admitted to Ward:</strong></p>
 <ol type="a">
-<li><strong>Disease importation check</strong> (lines 118-123)
+<li><strong>Disease importation check</strong>
 <ul>
-<li>Probability <code>admitImportationInfectionProbability</code> (0.01)</li>
+<li>Probability <code>admitImportationInfectionProbability</code> (<strong><code>0.01</code></strong>)</li>
 <li>If true: patient starts with INFECTED disease state</li>
 <li>Mark as imported, record infection date, start disease process</li>
 </ul></li>
-<li><strong>Update patient attributes</strong> (lines 125-135)
+<li><strong>Update patient attributes</strong>
 <ul>
 <li>Add to tracking lists: <code>patients</code>, <code>notInIcu</code></li>
 <li>Set location: <code>admitLocation="Ward"</code>, <code>currentLocation="Ward"</code></li>
 <li>Set admission time to current tick</li>
 <li>Mark <code>icuAdmit=false</code> attribute</li>
 </ul></li>
-<li><strong>Schedule discharge</strong> (line 130)
+<li><strong>Schedule discharge</strong>
 <ul>
 <li><code>nonIcuDischarger.scheduleDischarge(p)</code> creates one-time event</li>
-<li>Time drawn from LogNormal(scale=0.768, shape=1.253)</li>
+<li>Time drawn from LogNormal(scale=<strong><code>0.768</code></strong>, shape=<strong><code>1.253</code></strong>)</li>
 <li>Schedules call to <code>hospital.dischargePatient(p)</code></li>
 </ul></li>
-<li><strong>Assign therapy needs</strong> (lines 131-133)
+<li><strong>Assign therapy needs</strong>
 <ul>
 <li>Randomly assign based on probabilities:
 <ul>
-<li><code>needsOt</code>: probability <code>needsOt</code> (0.1)</li>
-<li><code>needsRt</code>: probability <code>needsRt</code> (0.1)</li>
-<li><code>needsPt</code>: probability <code>needsPt</code> (0.1)</li>
+<li><code>needsOt</code>: probability <code>needsOt</code> (<strong><code>0.1</code></strong>)</li>
+<li><code>needsRt</code>: probability <code>needsRt</code> (<strong><code>0.1</code></strong>)</li>
+<li><code>needsPt</code>: probability <code>needsPt</code> (<strong><code>0.1</code></strong>)</li>
 </ul></li>
 </ul></li>
-<li><strong>Add to ward context</strong> (line 135)
+<li><strong>Add to ward context</strong>
 <ul>
 <li>Add patient to <code>wardContext</code> for ward-specific operations</li>
 </ul></li>
-<li><strong>Record admission</strong> (line 136)
+<li><strong>Record admission</strong>
 <ul>
 <li>Append to <code>admissionData</code>: patientId, admitTime, icuAdmit=false, importation status</li>
 </ul></li>
 </ol>
-<p><strong>If admitted to ICU</strong> (lines 94-115):</p>
+<p><strong>If admitted to ICU:</strong></p>
 <p>Process differs from Ward admission in these ways:</p>
 <ol type="a">
-<li><strong>Disease importation</strong> (lines 94-99)
+<li><strong>Disease importation</strong>
 <ul>
-<li>Uses <code>admitImportationInfectionProbabilityICU</code> (0.01) - same probability as ward</li>
+<li>Uses <code>admitImportationInfectionProbabilityICU</code> (<strong><code>0.01</code></strong>) - same probability as ward</li>
 </ul></li>
-<li><strong>Tracking lists and location</strong> (lines 101-113)
+<li><strong>Tracking lists and location</strong>
 <ul>
 <li>Added to <code>inIcu</code> list instead of <code>notInIcu</code></li>
 <li>Location set to “ICU” instead of “Ward”</li>
 <li>Mark <code>icuAdmit=true</code> attribute</li>
 </ul></li>
-<li><strong>Discharge schedule</strong> (line 105)
+<li><strong>Discharge schedule</strong>
 <ul>
-<li>Uses <code>icuDischarger</code> with different distribution: LogNormal(scale=0.820, shape=0.916)</li>
+<li>Uses <code>icuDischarger</code> with different distribution: LogNormal(scale=<strong><code>0.820</code></strong>, shape=<strong><code>0.916</code></strong>)</li>
 </ul></li>
-<li><strong>Additional: Schedule potential transfer</strong> (line 106)
+<li><strong>Additional: Schedule potential transfer</strong>
 <ul>
 <li><strong>Key difference:</strong> ICU patients get a transfer event scheduled</li>
 <li><code>transferer.scheduleTransfer(p)</code> creates one-time event</li>
-<li>Time drawn from LogNormal(scale=1.0, shape=0.5)</li>
+<li>Time drawn from LogNormal(scale=<strong><code>1.0</code></strong>, shape=<strong><code>0.5</code></strong>)</li>
 <li>Schedules call to <code>hospital.transferPatient(p)</code></li>
 <li>Note: Both transfer and discharge are scheduled; whichever fires first will execute</li>
 </ul></li>
-<li><strong>Therapy needs</strong> (lines 108-110)
+<li><strong>Therapy needs</strong>
 <ul>
 <li>Different probabilities than ward:
 <ul>
-<li><code>needsOt</code>: probability <code>needsOtIcu</code> (0.1) - same as ward</li>
-<li><code>needsRt</code>: probability <code>needsRtIcu</code> (1.0) - <strong>ALL ICU patients need RT</strong></li>
-<li><code>needsPt</code>: probability <code>needsPtIcu</code> (0.1) - same as ward</li>
+<li><code>needsOt</code>: probability <code>needsOtIcu</code> (<strong><code>0.1</code></strong>) - same as ward</li>
+<li><code>needsRt</code>: probability <code>needsRtIcu</code> (<strong><code>1.0</code></strong>) - <strong>ALL ICU patients need RT</strong></li>
+<li><code>needsPt</code>: probability <code>needsPtIcu</code> (<strong><code>0.1</code></strong>) - same as ward</li>
 </ul></li>
 </ul></li>
-<li><strong>Context assignment</strong> (line 114)
+<li><strong>Context assignment</strong>
 <ul>
 <li>Added to <code>icuContext</code> instead of <code>wardContext</code></li>
 </ul></li>
 </ol>
-<p><strong>Add to therapy lists if needed</strong> (lines 139-147)</p>
+<p><strong>Add to therapy lists if needed</strong></p>
 <ul>
 <li>If patient needs OT: add to <code>patientsNeedingOt</code></li>
 <li>If patient needs PT: add to <code>patientsNeedingPt</code></li>
 <li>If patient needs RT: add to <code>patientsNeedingRt</code></li>
 </ul>
-<p><strong>Assign doctor</strong> (line 148)</p>
+<p><strong>Assign doctor</strong></p>
 <ul>
 <li>Calls <code>setPatientDoctorAssignments(p)</code></li>
 <li>Uses similar load-balancing algorithm as nurse assignment</li>
@@ -398,32 +405,32 @@ ul.task-list li input[type="checkbox"] {
 </ul></li>
 </ol>
 </section>
-<section id="patientvisit-process-patientvisit.java" class="level4">
-<h4 class="anchored" data-anchor-id="patientvisit-process-patientvisit.java">4. PatientVisit Process (PatientVisit.java)</h4>
+<section id="patientvisit-process" class="level4">
+<h4 class="anchored" data-anchor-id="patientvisit-process">4. PatientVisit Process</h4>
 <p><strong>One process instance per HCW</strong> - Each doctor, nurse, and therapist has their own visit process</p>
 <p><strong>Frequency:</strong> Varies by HCW type and location, using Gamma distributions</p>
 <p><strong>Process flow:</strong></p>
 <ol type="1">
-<li><p><strong>Start</strong> (PatientVisit.java:35-41)</p>
+<li><p><strong>Start</strong></p>
 <ul>
 <li>Calculate next event time from distribution</li>
 <li>Schedule one-time event to call <code>fire()</code></li>
 </ul></li>
-<li><p><strong>Fire</strong> (lines 44-47)</p>
+<li><p><strong>Fire</strong></p>
 <ul>
 <li>Calls <code>hcw.makeAVisit()</code></li>
 <li>Reschedules itself with <code>start()</code> - creating continuous loop</li>
 </ul></li>
-<li><p><strong>Next Event Time Calculation</strong> (lines 55-60)</p>
+<li><p><strong>Next Event Time Calculation</strong></p>
 <ul>
 <li>Sample from HCW-specific Gamma distribution (in minutes)</li>
-<li>Add fixed room visit duration: 6.6 minutes</li>
+<li>Add fixed room visit duration: <strong><code>6.6</code></strong> minutes</li>
 <li>Convert to days: multiply by <code>TimeUtils.MINUTE</code> constant</li>
 <li>Return: currentTime + elapsedTime</li>
 </ul></li>
 <li><p><strong>Make a Visit</strong> - Implementation varies by HCW type</p>
-<p>The base class <code>HealthCareWorker.makeAVisit()</code> (HealthCareWorker.java:72-82) is overridden in each subclass:</p>
-<p><strong>Doctors</strong> (Doctor.java:14-27):</p>
+<p>The base class <code>HealthCareWorker.makeAVisit()</code> is overridden in each subclass:</p>
+<p><strong>Doctors:</strong></p>
 <ul>
 <li>Get the <code>hospitalnet</code> network from hospital</li>
 <li>Check if doctor has any assigned patients (<code>getDegree(this) &gt; 0</code>)</li>
@@ -432,7 +439,7 @@ ul.task-list li input[type="checkbox"] {
 <li>Check for transmission</li>
 <li>Record visit to <code>hospital.visitData</code></li>
 </ul>
-<p><strong>Nurses</strong> (Nurse.java:16-27):</p>
+<p><strong>Nurses:</strong></p>
 <ul>
 <li>Identical logic to doctors</li>
 <li>Get <code>hospitalnet</code> network</li>
@@ -442,18 +449,18 @@ ul.task-list li input[type="checkbox"] {
 <li>Check for transmission</li>
 <li>Record visit</li>
 </ul>
-<p><strong>Therapists (RT/PT/OT)</strong> (Therapist.java:24-31):</p>
+<p><strong>Therapists (RT/PT/OT):</strong></p>
 <ul>
 <li>Check if <code>needsArray</code> has any patients (size &gt; 0)</li>
 <li><code>needsArray</code> is set to <code>hospital.patientsNeedingOt/Pt/Rt</code> for each therapist type</li>
 <li>Select random patient from the needs list</li>
-<li><strong>REMOVE patient from needs list</strong> after selection (line 27)</li>
+<li><strong>REMOVE patient from needs list</strong> after selection</li>
 <li><strong>Key point:</strong> Each patient is visited at most once per day by each therapist type</li>
 <li>The needs list is repopulated daily by <code>Builder.daily()</code> → <code>hospital.resetTherapyNeeds()</code></li>
 <li>Check for transmission</li>
 <li>Record visit</li>
 </ul>
-<p><strong>ICU Respiratory Therapists (IcuRt)</strong> (IcuRt.java:17-34):</p>
+<p><strong>ICU Respiratory Therapists (IcuRt):</strong></p>
 <ul>
 <li>Get list of all current ICU patients (<code>hospital.inIcu</code>)</li>
 <li>If list is empty, return (no visit)</li>
@@ -462,7 +469,7 @@ ul.task-list li input[type="checkbox"] {
 <li>Check for transmission</li>
 <li>Record visit</li>
 </ul>
-<p><strong>Transmission check</strong> (HealthCareWorker.java:34-56):</p>
+<p><strong>Transmission check:</strong></p>
 <ul>
 <li>Logic for all HCW types:
 <ul>
@@ -480,30 +487,30 @@ ul.task-list li input[type="checkbox"] {
 </ul></li>
 </ol>
 </section>
-<section id="discharge-process-discharge.java" class="level4">
-<h4 class="anchored" data-anchor-id="discharge-process-discharge.java">5. Discharge Process (Discharge.java)</h4>
+<section id="discharge-process" class="level4">
+<h4 class="anchored" data-anchor-id="discharge-process">5. Discharge Process</h4>
 <p><strong>Scheduled individually for each patient upon admission</strong></p>
-<p><strong>Timing:</strong> - ICU patients: LogNormal(scale=0.820, shape=0.916) - Ward patients: LogNormal(scale=0.768, shape=1.253)</p>
+<p><strong>Timing:</strong> - ICU patients: LogNormal(scale=<strong><code>0.820</code></strong>, shape=<strong><code>0.916</code></strong>) - Ward patients: LogNormal(scale=<strong><code>0.768</code></strong>, shape=<strong><code>1.253</code></strong>)</p>
 <p><strong>Process flow:</strong></p>
 <ol type="1">
-<li><p><strong>Schedule discharge</strong> (Discharge.java:35-40)</p>
+<li><p><strong>Schedule discharge</strong></p>
 <ul>
 <li>Called when patient is admitted</li>
 <li>Sample discharge time from distribution</li>
 <li>Schedule one-time event: <code>hospital.dischargePatient(p)</code></li>
 </ul></li>
-<li><p><strong>Discharge patient</strong> (Hospital.java:300-317)</p>
-<p><strong>Collect timing data</strong> (lines 301-302)</p>
+<li><p><strong>Discharge patient</strong></p>
+<p><strong>Collect timing data</strong></p>
 <ul>
 <li>Record admit time and current time for length-of-stay calculation</li>
 </ul>
-<p><strong>Remove from hospital</strong> (lines 307-310)</p>
+<p><strong>Remove from hospital</strong></p>
 <ul>
 <li>Remove from main context</li>
 <li>Remove from <code>patients</code> list</li>
 <li>Remove from <code>inIcu</code> or <code>notInIcu</code> list</li>
 </ul>
-<p><strong>Create discharge record</strong> (lines 313-314)</p>
+<p><strong>Create discharge record</strong></p>
 <ul>
 <li>Create <code>DischargedPatient</code> object with:
 <ul>
@@ -517,32 +524,32 @@ ul.task-list li input[type="checkbox"] {
 <li>dischargeLocation (current location at discharge)</li>
 </ul></li>
 </ul>
-<p><strong>Store record</strong> (lines 315-316)</p>
+<p><strong>Store record</strong></p>
 <ul>
 <li>Add to <code>dischargedPatients</code> list</li>
 <li>Add to context (for potential Repast probes/data collection)</li>
 </ul></li>
 </ol>
 </section>
-<section id="transfer-process-transfer.java" class="level4">
-<h4 class="anchored" data-anchor-id="transfer-process-transfer.java">6. Transfer Process (Transfer.java)</h4>
+<section id="transfer-process" class="level4">
+<h4 class="anchored" data-anchor-id="transfer-process">6. Transfer Process</h4>
 <p><strong>Scheduled only for ICU-admitted patients</strong></p>
-<p><strong>Timing:</strong> LogNormal(scale=1.0, shape=0.5)</p>
+<p><strong>Timing:</strong> LogNormal(scale=<strong><code>1.0</code></strong>, shape=<strong><code>0.5</code></strong>)</p>
 <p><strong>Process flow:</strong></p>
 <ol type="1">
-<li><p><strong>Schedule transfer</strong> (Transfer.java:33-38)</p>
+<li><p><strong>Schedule transfer</strong></p>
 <ul>
 <li>Called when patient is admitted to ICU</li>
 <li>Sample transfer time from distribution</li>
 <li>Schedule one-time event: <code>hospital.transferPatient(p)</code></li>
 </ul></li>
-<li><p><strong>Transfer patient</strong> (Hospital.java:154-160)</p>
-<p><strong>Update location lists</strong> (lines 156-157)</p>
+<li><p><strong>Transfer patient</strong></p>
+<p><strong>Update location lists</strong></p>
 <ul>
 <li>Remove from <code>inIcu</code> list</li>
 <li>Add to <code>notInIcu</code> list</li>
 </ul>
-<p><strong>Update patient state</strong> (lines 158-159)</p>
+<p><strong>Update patient state</strong></p>
 <ul>
 <li>Set <code>currentLocation = "Ward"</code></li>
 <li>Record <code>transferTime</code> (current tick)</li>
@@ -554,102 +561,102 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="model-termination-and-output" class="level2">
 <h2 class="anchored" data-anchor-id="model-termination-and-output">Model Termination and Output</h2>
-<section id="builder.endofrun---at-tick-365-builder.java141-149" class="level3">
-<h3 class="anchored" data-anchor-id="builder.endofrun---at-tick-365-builder.java141-149">Builder.endOfRun() - At Tick 365 (Builder.java:141-149)</h3>
-<p><strong>When:</strong> Single execution at tick 365</p>
+<section id="builder.endofrun---at-tick-365" class="level3">
+<h3 class="anchored" data-anchor-id="builder.endofrun---at-tick-365">Builder.endOfRun() - At Tick 365</h3>
+<p><strong>When:</strong> Single execution at tick <strong><code>365</code></strong></p>
 <p><strong>What it does:</strong></p>
 <ol type="1">
-<li><strong>Write output files</strong> (line 145)
+<li><strong>Write output files</strong>
 <ul>
 <li>Calls <code>writeSingleRunFiles()</code></li>
 </ul></li>
-<li><strong>End simulation</strong> (line 147)
+<li><strong>End simulation</strong>
 <ul>
 <li>Calls <code>RunEnvironment.getInstance().endRun()</code></li>
 <li>Stops the scheduler</li>
 </ul></li>
 </ol>
 </section>
-<section id="output-file-generation-builder.java151-183" class="level3">
-<h3 class="anchored" data-anchor-id="output-file-generation-builder.java151-183">Output File Generation (Builder.java:151-183)</h3>
+<section id="output-file-generation" class="level3">
+<h3 class="anchored" data-anchor-id="output-file-generation">Output File Generation</h3>
 <p>The model creates three output files:</p>
-<section id="discharged_patients.txt-lines-154-164" class="level4">
-<h4 class="anchored" data-anchor-id="discharged_patients.txt-lines-154-164">1. discharged_patients.txt (lines 154-164)</h4>
+<section id="discharged_patients.txt" class="level4">
+<h4 class="anchored" data-anchor-id="discharged_patients.txt">1. discharged_patients.txt</h4>
 <p><strong>Format:</strong> CSV with header</p>
 <pre><code>agentId,admitTime,dischargeTime,icuAdmit,transferTime,admitLocation,dischargeLocation</code></pre>
-<p><strong>Content:</strong> - One row per discharged patient - <code>transferTime</code> is 0.0 if patient was never transferred - <code>icuAdmit</code> indicates if patient was initially admitted to ICU - Enables length-of-stay analysis, transfer analysis, ICU vs ward utilization</p>
+<p><strong>Content:</strong> - One row per discharged patient - <code>transferTime</code> is <strong><code>0.0</code></strong> if patient was never transferred - <code>icuAdmit</code> indicates if patient was initially admitted to ICU - Enables length-of-stay analysis, transfer analysis, ICU vs ward utilization</p>
 <p><strong>Generation:</strong> - Loops through <code>hospital.getDischargedPatients()</code> list - Calls <code>DischargedPatient.toString()</code> for each record</p>
 </section>
-<section id="visit_data.txt-lines-167-172" class="level4">
-<h4 class="anchored" data-anchor-id="visit_data.txt-lines-167-172">2. visit_data.txt (lines 167-172)</h4>
+<section id="visit_data.txt" class="level4">
+<h4 class="anchored" data-anchor-id="visit_data.txt">2. visit_data.txt</h4>
 <p><strong>Format:</strong> CSV with header</p>
 <pre><code>hcwId,hcwType,hcwDiseaseState,patientId,patientDiseaseState,patientLocation,visitTime</code></pre>
 <p><strong>Content:</strong> - One row per HCW visit to a patient - Records disease states of both HCW and patient at time of visit - Includes visit location (ICU or Ward) and exact time - Enables visit pattern analysis, HCW workload analysis, transmission chain reconstruction</p>
-<p><strong>Generation:</strong> - Writes the accumulated <code>hospital.visitData</code> StringBuffer - This buffer is appended to throughout the simulation (HealthCareWorker.java:80)</p>
+<p><strong>Generation:</strong> - Writes the accumulated <code>hospital.visitData</code> StringBuffer - This buffer is appended to throughout the simulation</p>
 </section>
-<section id="admission_data.txt-lines-175-180" class="level4">
-<h4 class="anchored" data-anchor-id="admission_data.txt-lines-175-180">3. admission_data.txt (lines 175-180)</h4>
+<section id="admission_data.txt" class="level4">
+<h4 class="anchored" data-anchor-id="admission_data.txt">3. admission_data.txt</h4>
 <p><strong>Format:</strong> CSV with header</p>
 <pre><code>patientId,admitTime,icuAdmit,importation</code></pre>
 <p><strong>Content:</strong> - One row per patient admission - <code>icuAdmit</code>: true if admitted to ICU, false if admitted to Ward - <code>importation</code>: true if patient arrived with imported MRSA infection - Enables admission pattern analysis and importation tracking</p>
-<p><strong>Generation:</strong> - Writes the accumulated <code>hospital.admissionData</code> StringBuffer - This buffer is appended to during admission (Hospital.java:115, 136)</p>
+<p><strong>Generation:</strong> - Writes the accumulated <code>hospital.admissionData</code> StringBuffer - This buffer is appended to during admission</p>
 </section>
 </section>
 </section>
 <section id="key-model-parameters" class="level2">
 <h2 class="anchored" data-anchor-id="key-model-parameters">Key Model Parameters</h2>
-<p>All parameters are defined in Builder.java (lines 49-125) and accessible via Repast GUI:</p>
+<p>All parameters are defined in Builder.java and accessible via Repast GUI:</p>
 <section id="hospital-structure" class="level3">
 <h3 class="anchored" data-anchor-id="hospital-structure">Hospital Structure</h3>
 <ul>
-<li><code>hospitalCapacity</code> = 120 beds</li>
-<li><code>icuCapacity</code> = 20 beds</li>
-<li>Ward capacity = 100 beds (derived)</li>
+<li><code>hospitalCapacity</code> = <strong><code>120</code></strong> beds</li>
+<li><code>icuCapacity</code> = <strong><code>20</code></strong> beds</li>
+<li>Ward capacity = <strong><code>100</code></strong> beds (derived)</li>
 </ul>
 </section>
 <section id="admission-discharge-transfer-adt" class="level3">
 <h3 class="anchored" data-anchor-id="admission-discharge-transfer-adt">Admission-Discharge-Transfer (ADT)</h3>
 <ul>
-<li><code>admissionsRate</code> = 0.05 (mean inter-arrival time in days)</li>
-<li>Ward discharge: LogNormal(scale=0.768, shape=1.253)</li>
-<li>ICU discharge: LogNormal(scale=0.820, shape=0.916)</li>
-<li><code>icuAdmitProbability</code> = 0.15 (15% of admissions go to ICU)</li>
-<li><code>icuTransferProbability</code> = 0.1 (affects transfer timing, not probability)</li>
-<li>ICU→Ward transfer: LogNormal(scale=1.0, shape=0.5)</li>
+<li><code>admissionsRate</code> = <strong><code>0.05</code></strong> (mean inter-arrival time in days)</li>
+<li>Ward discharge: LogNormal(scale=<strong><code>0.768</code></strong>, shape=<strong><code>1.253</code></strong>)</li>
+<li>ICU discharge: LogNormal(scale=<strong><code>0.820</code></strong>, shape=<strong><code>0.916</code></strong>)</li>
+<li><code>icuAdmitProbability</code> = <strong><code>0.15</code></strong> (<strong><code>15%</code></strong> of admissions go to ICU)</li>
+<li><code>icuTransferProbability</code> = <strong><code>0.1</code></strong> (affects transfer timing, not probability)</li>
+<li>ICU→Ward transfer: LogNormal(scale=<strong><code>1.0</code></strong>, shape=<strong><code>0.5</code></strong>)</li>
 </ul>
 </section>
 <section id="therapy-needs" class="level3">
 <h3 class="anchored" data-anchor-id="therapy-needs">Therapy Needs</h3>
 <ul>
-<li><code>needsRt</code> = 0.1 (ward), <code>needsRtIcu</code> = 1.0 (ICU) - respiratory therapy</li>
-<li><code>needsPt</code> = 0.1 (both ICU and ward) - physical therapy</li>
-<li><code>needsOt</code> = 0.1 (both ICU and ward) - occupational therapy</li>
+<li><code>needsRt</code> = <strong><code>0.1</code></strong> (ward), <code>needsRtIcu</code> = <strong><code>1.0</code></strong> (ICU) - respiratory therapy</li>
+<li><code>needsPt</code> = <strong><code>0.1</code></strong> (both ICU and ward) - physical therapy</li>
+<li><code>needsOt</code> = <strong><code>0.1</code></strong> (both ICU and ward) - occupational therapy</li>
 </ul>
 </section>
 <section id="staffing-ratios-hcws-per-bed" class="level3">
 <h3 class="anchored" data-anchor-id="staffing-ratios-hcws-per-bed">Staffing Ratios (HCWs per bed)</h3>
 <ul>
-<li>Ward nurses: 0.2</li>
-<li>ICU nurses: 0.5</li>
-<li>Ward doctors: 0.2</li>
-<li>ICU doctors: 0.3</li>
-<li>ICU respiratory therapists: 0.1</li>
-<li>Ward therapists (RT/PT/OT): 0.1 each</li>
+<li>Ward nurses: <strong><code>0.2</code></strong></li>
+<li>ICU nurses: <strong><code>0.5</code></strong></li>
+<li>Ward doctors: <strong><code>0.2</code></strong></li>
+<li>ICU doctors: <strong><code>0.3</code></strong></li>
+<li>ICU respiratory therapists: <strong><code>0.1</code></strong></li>
+<li>Ward therapists (RT/PT/OT): <strong><code>0.1</code></strong> each</li>
 </ul>
 </section>
 <section id="hcw-visit-patterns-gamma-distributions-shape-and-scale-parameters" class="level3">
 <h3 class="anchored" data-anchor-id="hcw-visit-patterns-gamma-distributions-shape-and-scale-parameters">HCW Visit Patterns (Gamma distributions, shape and scale parameters)</h3>
 <p>All times in minutes, converted to days via <code>TimeUtils.MINUTE</code></p>
-<p><strong>Ward:</strong> - Nurse visits: Gamma(0.54, 55.1) + 6.6 min room time - Doctor visits: Gamma(0.52, 90.7) + 6.6 min room time - Therapist visits: Gamma(0.62, 61.7) + 6.6 min room time</p>
-<p><strong>ICU:</strong> - Nurse visits: Gamma(0.54, 20) + 6.6 min room time - Doctor visits: Gamma(0.52, 35.3) + 6.6 min room time</p>
+<p><strong>Ward:</strong> - Nurse visits: Gamma(<strong><code>0.54</code></strong>, <strong><code>55.1</code></strong>) + <strong><code>6.6</code></strong> min room time - Doctor visits: Gamma(<strong><code>0.52</code></strong>, <strong><code>90.7</code></strong>) + <strong><code>6.6</code></strong> min room time - Therapist visits: Gamma(<strong><code>0.62</code></strong>, <strong><code>61.7</code></strong>) + <strong><code>6.6</code></strong> min room time</p>
+<p><strong>ICU:</strong> - Nurse visits: Gamma(<strong><code>0.54</code></strong>, <strong><code>20</code></strong>) + <strong><code>6.6</code></strong> min room time - Doctor visits: Gamma(<strong><code>0.52</code></strong>, <strong><code>35.3</code></strong>) + <strong><code>6.6</code></strong> min room time</p>
 </section>
 <section id="disease-parameters" class="level3">
 <h3 class="anchored" data-anchor-id="disease-parameters">Disease Parameters</h3>
 <ul>
-<li><code>admitImportationInfectionProbability</code> = 0.01 (ward)</li>
-<li><code>admitImportationInfectionProbabilityICU</code> = 0.01 (ICU)</li>
-<li><code>hhAdherenceBase</code> = 0.5 (hand hygiene compliance for all HCW types)</li>
-<li><code>ppeAdherenceIfCp</code> = 0.5 (PPE/glove compliance)</li>
+<li><code>admitImportationInfectionProbability</code> = <strong><code>0.01</code></strong> (ward)</li>
+<li><code>admitImportationInfectionProbabilityICU</code> = <strong><code>0.01</code></strong> (ICU)</li>
+<li><code>hhAdherenceBase</code> = <strong><code>0.5</code></strong> (hand hygiene compliance for all HCW types)</li>
+<li><code>ppeAdherenceIfCp</code> = <strong><code>0.5</code></strong> (PPE/glove compliance)</li>
 </ul>
 </section>
 </section>
@@ -669,12 +676,12 @@ ul.task-list li input[type="checkbox"] {
 <ul>
 <li>Patients can be imported with INFECTED state on admission</li>
 <li>HCWs can be marked as contaminated</li>
-<li>Visit checking logic exists (HealthCareWorker.java:26-56, 72-88)</li>
+<li>Visit checking logic exists in HealthCareWorker class</li>
 <li><strong>However:</strong> Actual transmission during visits is not fully implemented
 <ul>
-<li><code>checkTransmissionToPatient()</code> returns true if HCW performs hand hygiene (line 61-64)</li>
-<li><code>checkTransmissionToHcw()</code> returns false (line 68-70)</li>
-<li><code>checkTransmission()</code> is empty (line 85-88)</li>
+<li><code>checkTransmissionToPatient()</code> returns true if HCW performs hand hygiene</li>
+<li><code>checkTransmissionToHcw()</code> returns false</li>
+<li><code>checkTransmission()</code> is empty</li>
 </ul></li>
 </ul>
 </section>
@@ -685,17 +692,17 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="summary-of-model-dynamics" class="level2">
 <h2 class="anchored" data-anchor-id="summary-of-model-dynamics">Summary of Model Dynamics</h2>
-<p>The model simulates a continuous flow hospital over 365 days:</p>
+<p>The model simulates a continuous flow hospital over <strong><code>365</code></strong> days:</p>
 <ol type="1">
-<li><strong>Patients arrive</strong> stochastically (~20 admissions per day on average)</li>
-<li><strong>Admitted to ICU (15%) or Ward (85%)</strong> based on probability and bed availability</li>
+<li><strong>Patients arrive</strong> stochastically (~<strong><code>20</code></strong> admissions per day on average)</li>
+<li><strong>Admitted to ICU (</strong><code>15%</code><strong>) or Ward (</strong><code>85%</code><strong>)</strong> based on probability and bed availability</li>
 <li><strong>Assigned to doctors</strong> (once, at admission) using load-balancing</li>
 <li><strong>Assigned to nurses</strong> (twice daily, at shift changes) using load-balancing</li>
 <li><strong>Visited by HCWs</strong> throughout their stay according to stochastic schedules</li>
 <li><strong>ICU patients may transfer</strong> to ward after some time</li>
 <li><strong>All patients eventually discharge</strong> after length-of-stay drawn from location-specific distributions</li>
 <li><strong>Visit data</strong> and <strong>discharge data</strong> accumulate throughout simulation</li>
-<li><strong>Output files</strong> written at day 365 for analysis</li>
+<li><strong>Output files</strong> written at day <strong><code>365</code></strong> for analysis</li>
 </ol>
 <p>The model generates realistic admission-discharge-transfer patterns and HCW workload distributions that can be analyzed using the R/Quarto scripts in the <code>R/</code> directory.</p>
 </section>
@@ -754,14 +761,13 @@ ul.task-list li input[type="checkbox"] {
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-      const outerScaffold = trigger.parentElement.cloneNode(true);
-      const codeEl = outerScaffold.querySelector('code');
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
         }
-      }
-      return codeEl.innerText;
+        return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy

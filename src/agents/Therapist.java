@@ -12,8 +12,8 @@ public class Therapist extends HealthCareWorker {
     private ArrayList<Patient> needsArray;
     
     
-    public Therapist(HcwType hcwtype, Hospital hospital) {
-	super(hcwtype, hospital);
+    public Therapist(HcwType hcwtype, Hospital hospital, double hhPre, double hhPost, double ppe) {
+	super(hcwtype, hospital, hhPre,  hhPost,  ppe);
 	this.therapistType = hcwtype;
     }
     

@@ -5,8 +5,8 @@ import repast.simphony.space.graph.Network;
 
 public class Doctor extends HealthCareWorker {
 
-    public Doctor(HcwType hcwtype, Hospital hospital) {
-	super(hcwtype, hospital);
+    public Doctor(HcwType hcwtype, Hospital hospital, double hhPre, double hhPost, double ppe) {
+	super(hcwtype, hospital, hhPre, hhPost, ppe);
 	// TODO Auto-generated constructor stub
     }
 
