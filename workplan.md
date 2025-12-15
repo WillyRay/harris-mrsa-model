@@ -1,3 +1,10 @@
+---
+format:
+  html:
+    embed-resources: true
+---
+
+
 # MRSA ABM Model - Work Plan
 **Project Period**: December 2025 - March 2025
 ---
@@ -8,17 +15,18 @@
 
 Goals:
 
-- Finish Visit behavior
+- [x] Finish Visit behavior
 
 Tasks:
 
 - Finish transmission-eligible visit behavior
-   - HH->GG->Transmission?->HH
-   - Q: Model all as nested or sequenced steps, or multiply probabilities?
+   - [x] HH->GG->Transmission?->HH
+   - [x] ~~Q: Model all as nested or sequenced steps, or multiply probabilities?~~ Just model independent events
 
 Deliverables:
 
-- Visit data file contains all visits with disease state of hcw and patient, whether or not transmission occurred.
+- ~~Visit data file contains all visits with disease state of hcw and patient, whether or not transmission occurred.~~
+- new transmission.txt data file contains all hcw->patient transmissions.  
 
 Notes:
 

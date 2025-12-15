@@ -62,7 +62,7 @@ public class Hospital extends DefaultContext<Agent> {
 	this.admissionData = new StringBuffer();
 	this.admissionData.append("patientId,admitTime,icuAdmit,importation\n");
 	this.tranmissionData = new StringBuffer();
-	this.tranmissionData.append("time,patientId,hcwId,hcwType,location");
+	this.tranmissionData.append("time,patientId,hcwId,hcwType,location\n");
 
 	
 	this.dischargedPatients = new ArrayList<DischargedPatient>();

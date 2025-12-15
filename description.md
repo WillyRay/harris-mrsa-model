@@ -1,13 +1,28 @@
+---
+format:
+  html:
+    embed-resources: true
+---
+
 # Harris MRSA Model - Comprehensive Description
+
+## Recent Updates (as of December 2025)
+
+- **Transmission logic updated:** The disease transmission logic has been revised and extended (see Disease Transmission Model section below).
+- **Transmission data collection:** A new transmission data file (`transmission.txt`) is generated, capturing all HCW-to-patient transmission events for detailed analysis.
+- **Documentation improvements:** Various documentation updates and preparations for next-phase development.
+- This documentation reflects the state of the 'next' branch as of December 2025.
+
+## Next Steps
+- Add patient->hcw contamination data file
+- finish disease model especially transitions from C to I, I to R
+
 
 ## Overview
 
 This is an Agent-Based Model (ABM) simulating MRSA transmission dynamics in a hospital setting. The model tracks patient admissions, discharges, transfers between ICU and ward, healthcare worker (HCW) visits to patients.
 
-## Next Steps
-- finish visit process including transmission to patient, from patient.
-- finish disease model especially transitions from C to I, I to R
-- address death vs. discharge 
+
 
 ## Model Entry Point and Initialization
 
@@ -358,7 +373,7 @@ In addition to the regular scheduled methods, several stochastic processes fire 
      - If HCW contaminated AND patient clean: potential HCW→patient transmission
      - If HCW clean AND patient colonized/infected: potential patient→HCW transmission
      - If both contaminated/infected: no additional transmission
-   - Note: Actual transmission logic is not fully implemented
+
 
    **Visit recording** - All HCW types append to `hospital.visitData`:
    - Format: `hcwId, hcwType, hcwDiseaseState, patientId, patientDiseaseState, patientLocation, visitTime`
@@ -446,7 +461,8 @@ In addition to the regular scheduled methods, several stochastic processes fire 
 
 ### Output File Generation
 
-The model creates three output files:
+
+The model creates four output files:
 
 #### 1. discharged_patients.txt
 
@@ -482,6 +498,7 @@ hcwId,hcwType,hcwDiseaseState,patientId,patientDiseaseState,patientLocation,visi
 - Writes the accumulated `hospital.visitData` StringBuffer
 - This buffer is appended to throughout the simulation
 
+
 #### 3. admission_data.txt
 
 **Format:** CSV with header
@@ -495,9 +512,28 @@ patientId,admitTime,icuAdmit,importation
 - `importation`: true if patient arrived with imported MRSA infection
 - Enables admission pattern analysis and importation tracking
 
+
 **Generation:**
 - Writes the accumulated `hospital.admissionData` StringBuffer
 - This buffer is appended to during admission
+
+#### 4. transmission.txt
+
+**Format:** CSV with header
+```
+time,patientId,hcwId,hcwType,location
+```
+
+**Content:**
+- One row per transmission event (e.g., MRSA transmission from HCW to patient or vice versa)
+- 'time': tick when transmission occurred
+- 'patientId': ID of patient colonized
+- 'hcwId': ID of HCW transmitter
+- 'hcwType': type of HCW (NURSE, DOCTOR, etc.)
+- 'location': ICU or Ward where transmission occurred
+
+**Generation:**
+- Writes the accumulated transmission event records as they occur during the simulation
 
 ## Key Model Parameters
 
@@ -547,9 +583,10 @@ All times in minutes, converted to days via `TimeUtils.MINUTE`
 - `hhAdherenceBase` = **`0.5`** (hand hygiene compliance for all HCW types)
 - `ppeAdherenceIfCp` = **`0.5`** (PPE/glove compliance)
 
-## Disease Transmission Model (Partially Implemented)
 
-The model includes disease tracking infrastructure but transmission logic is not fully implemented:
+## Disease Transmission Model (Updated December 2025)
+
+The model includes disease tracking infrastructure and, as of the latest update, the transmission logic has been implemented:
 
 ### Disease States (DiseaseStates.java)
 - SUSCEPTIBLE - not colonized or infected
@@ -560,17 +597,17 @@ The model includes disease tracking infrastructure but transmission logic is not
 - Patients can be imported with INFECTED state on admission
 - HCWs can be marked as contaminated
 - Visit checking logic exists in HealthCareWorker class
-- **However:** Actual transmission during visits is not fully implemented
-  - `checkTransmissionToPatient()` returns true if HCW performs hand hygiene
-  - `checkTransmissionToHcw()` returns false
-  - `checkTransmission()` is empty
+- **Transmission logic has been updated:**
+   - `checkTransmissionToPatient()` and `checkTransmissionToHcw()` now include improved logic for simulating MRSA transmission events during visits, based on hand hygiene and contamination status.
+   - Transmission events are now recorded in visit data for post-hoc analysis.
+
 
 ### Data Collection for Transmission Analysis
-Even though transmission is not implemented, the model records:
+The model records:
 - HCW contamination status at each visit
 - Patient disease state at each visit
 - Visit timing and location
-This allows post-hoc transmission analysis or model extension.
+This allows post-hoc transmission analysis or further model extension.
 
 ## Summary of Model Dynamics
 
