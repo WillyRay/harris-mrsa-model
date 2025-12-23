@@ -39,7 +39,9 @@ import org.apache.commons.math3.distribution.LogNormalDistribution;
 //	newDistro = new LogNormalDistribution(0.7032373, 0.9986254)
 
 public class Builder implements ContextBuilder<Object> {
-	
+
+	private static Builder instance;
+
     	private Parameters params;
 	ISchedule schedule ;
 	Hospital hospital;
@@ -123,8 +125,15 @@ public class Builder implements ContextBuilder<Object> {
 	private double importerDieProbability = 0.1;
 	private double importerDiePrombabilityicu = importerDieProbability;
 	
-	
-
+	private int colonizedOnAdmission;
+	private int mrsaInfectionIncidence;
+	private int icuAdmissions;
+	private double meanLosGw;
+	private double meanLosIcu;
+	private double meanLosMrsaInfected;
+	private int icuMortality;
+	private int gwMortality;
+	public int totalInfections;
 	
 	
 	//review on 1/27:
@@ -207,6 +216,9 @@ public class Builder implements ContextBuilder<Object> {
 		schedule = RunEnvironment.getInstance().getCurrentSchedule();
 		
 	
+		// Set the singleton instance
+		instance = this;
+
 		hhEfficacy = params.getDouble("hhEfficacy"); //efficacy of hand hygiene
 
 		hhAdherenceBase = params.getDouble("hhAdherenceBase");
@@ -629,6 +641,62 @@ public class Builder implements ContextBuilder<Object> {
 	}
 	public void setPpeAdherenceIfCp(double ppeAdherenceIfCp) {
 	    this.ppeAdherenceIfCp = ppeAdherenceIfCp;
+	}
+	public int getColonizedOnAdmission() {
+	    return colonizedOnAdmission;
+	}
+	public void setColonizedOnAdmission(int colonizedOnAdmission) {
+	    this.colonizedOnAdmission = colonizedOnAdmission;
+	}
+	public int getIcuAdmissions() {
+	    return icuAdmissions;
+	}
+	public void setIcuAdmissions(int icuAdmissions) {
+	    this.icuAdmissions = icuAdmissions;
+	}
+	public double getMeanLosGw() {
+	    return meanLosGw;
+	}
+	public void setMeanLosGw(double meanLosGw) {
+	    this.meanLosGw = meanLosGw;
+	}
+	public double getMeanLosIcu() {
+	    return meanLosIcu;
+	}
+	public void setMeanLosIcu(double meanLosIcu) {
+	    this.meanLosIcu = meanLosIcu;
+	}
+	public double getMeanLosMrsaInfected() {
+	    return meanLosMrsaInfected;
+	}
+	public void setMeanLosMrsaInfected(double meanLosMrsaInfected) {
+	    this.meanLosMrsaInfected = meanLosMrsaInfected;
+	}
+	public int getIcuMortality() {
+	    return icuMortality;
+	}
+	public void setIcuMortality(int icuMortality) {
+	    this.icuMortality = icuMortality;
+	}
+	public int getGwMortality() {
+	    return gwMortality;
+	}
+	public void setGwMortality(int gwMortality) {
+	    this.gwMortality = gwMortality;
+	}
+	public Parameters getParams() {
+	    return params;
+	}
+	public int getTotalInfections() {
+	    return this.totalInfections;
+	}
+	public void setTotalInfections(int total) {
+	    System.out.println("Setting total infections to " + total);
+	    this.totalInfections = total;
+	}
+
+	public static Builder getInstance() {
+	    return instance;
 	}
 
 

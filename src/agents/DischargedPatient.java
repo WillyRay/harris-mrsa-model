@@ -6,6 +6,7 @@ public class DischargedPatient extends Agent {
     private boolean imported, icu;
     private int agentId;
     private String dischargeLocation, admitLocation;
+    private double colonizedTime, infectedTime;
     
     
     

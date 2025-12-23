@@ -20,7 +20,7 @@ public class HealthCareWorker extends Agent {
     private double handHygieneCompliance;
     private double handHygieneCompliancePost;
     private double gloveCompliance;
-     
+
     public HealthCareWorker(HcwType hcwtype, Hospital hospital, double hhPre, double hhPost, double ppe) {
 	super();
     	this.TYPE = hcwtype;
@@ -78,6 +78,7 @@ public class HealthCareWorker extends Agent {
 	    } else if (this.isContaminated() && !ptTransmiss) {
 		// hcw contaminated, patient uninfected, check visit for transmission HCW->pt
 		handHygieneCheckPre();
+		// TODO check if isolation is in place, if so, use GG
 		if (!this.isContaminated()) {
 		    return false;
 		}
@@ -89,6 +90,7 @@ public class HealthCareWorker extends Agent {
 		}
 		//"time,patientId,hcwId,hcwType,location
 		hospital.tranmissionData.append(TimeUtils.getSchedule().getTickCount() + "," + p.getAgentId() + "," + this.getAgentId() + "," + this.TYPE.toString() + "," + p.getCurrentLocation() + "\n");
+		
 		handHygieneCheckPost();
 		return true;
 	    }
@@ -97,7 +99,7 @@ public class HealthCareWorker extends Agent {
 		//hcw uninfected, patient infected, check visit for transmission pt->HCW
 		if (Chooser.randomTrue(params.getDouble("transmission_probability_patient_to_hcw"))) {
 		    this.setContaminated(true);
-		    handHygieneCheckPost();
+		    //handHygieneCheckPost();
 		    if (this.isContaminated()) {
 			if (Chooser.randomTrue(this.gloveCompliance)) {
 			    if (Chooser.randomTrue(params.getDouble("glove_efficacy"))) {
@@ -105,6 +107,7 @@ public class HealthCareWorker extends Agent {
 				return false;
 			    }
 		    }
+			//TODO move hhcheckpost below gg
 		    this.setContaminated(true);
 		    }
 		    return true;
@@ -122,27 +125,8 @@ public class HealthCareWorker extends Agent {
     
     
     
-    private boolean checkTransmissionToPatient(Patient p) {
-	if (Chooser.randomTrue(this.handHygieneCompliance)) {
-	    if (Chooser.randomTrue(params.getDouble("hand_hygiene_efficacy"))) {
-	  	return false;
-	}
-	
-	}
-	
-	return Chooser.randomTrue(params.getDouble("transmission_probability_hcw_to_patient"));
-	
-    } 
+  
     
-
-    private boolean checkTransmissionToHcw(Patient p) {
-	//no check for hh
-	//check for gg
-	//transmission probability check
-	//check for hand hygiene post visit
-	
-	return false;
-    }
 
     public void makeAVisit() {
 	if (hospital.getPatientCount() > 0) {
@@ -152,10 +136,8 @@ public class HealthCareWorker extends Agent {
 	    Object po = hospital.getRandomObjects(agents.Patient.class, 1).iterator().next();
 	    Patient p = (Patient) po;
 	    boolean transmission = false;
-	    if (checkVisitForTransmission(p)) {
-		//checkTransmission(p);
-	    }
-	    hospital.visitData.append(this.getAgentId() + "," + this.TYPE.toString() + "," + this.isContaminated() + "," + p.getAgentId() + "," +p.getDiseaseState() + "," + p.getCurrentLocation() + "," + TimeUtils.getSchedule().getTickCount() + "\n");
+	    transmission = checkVisitForTransmission(p);
+	    hospital.visitData.append(this.getAgentId() + "," + this.TYPE.toString() + "," + this.isContaminated() + "," + p.getAgentId() + "," +p.getDiseaseState() + "," + p.getCurrentLocation() + "," + TimeUtils.getSchedule().getTickCount() + "," + transmission + "\n");
 	}
     }
     

@@ -9,15 +9,14 @@ import repast.simphony.engine.schedule.ScheduleParameters;
 import utils.TimeUtils;
 
 public class Discharge extends Process{
-    Hospital target;
-    Patient patient;
-    LogNormalDistribution dist;
-    ScheduleParameters schedParams;
-    double shape,scale;
-    double nextEventTime;
-    ISchedulableAction nextAction;
-    static int totalAdmissionsAttempted;
-    double meanObservedIntraEventTime;
+    private Hospital target;
+    private Patient patient;
+    private LogNormalDistribution dist;
+    private ScheduleParameters schedParams;
+    private double shape,scale;
+    private double nextEventTime;
+    private ISchedulableAction nextAction;
+    private double meanObservedIntraEventTime;
 
 
 

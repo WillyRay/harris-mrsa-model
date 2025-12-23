@@ -2,6 +2,10 @@ package processes.disease;
 
 import agents.HealthCareWorker;
 import agents.Patient;
+import builders.Builder;
+import processes.Progression;
+import repast.simphony.engine.schedule.ISchedulableAction;
+import utils.TimeUtils;
 
 public class AgentDisease {
     private DiseaseStates diseaseState;
@@ -12,9 +16,9 @@ public class AgentDisease {
     private double dateInfected;
     private double dateRecovered;
     private double dateDied;
-    
-    
-    
+    private Progression progressionAction;
+    private Builder builder;
+
     public AgentDisease(Patient patient) {
 	this.patient = patient;
 	this.diseaseState = DiseaseStates.SUSCEPTIBLE;
@@ -22,6 +26,17 @@ public class AgentDisease {
     
     public void start() {
 	
+    }
+    
+    public void doProgression() {
+	if (this.diseaseState == DiseaseStates.COLONIZED) {
+	    this.diseaseState = DiseaseStates.INFECTED;
+	    this.dateInfected = 0.0; 
+	   // System.out.println(TimeUtils.getSchedule().getTickCount() +
+	//	    ","	+ patient.toString() + ", PROGRESSION" );
+	    builder.getInstance().totalInfections++;
+	    
+	}
     }
 
 
@@ -82,6 +97,17 @@ public class AgentDisease {
 
     public void setColonizedBy(HealthCareWorker colonizedBy) {
         this.colonizedBy = colonizedBy;
+        double shape = 0;
+        double scale = 0;
+        if (patient.getCurrentLocation() == "ICU") {
+           shape = 1.5;
+           scale = 5.6;
+        } else {
+            shape = 1.5;
+	    scale = 8;
+        }
+        this.progressionAction = new Progression(shape, scale, this.patient);
+        
     }
 
 

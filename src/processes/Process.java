@@ -6,6 +6,8 @@ import org.apache.commons.math3.distribution.RealDistribution;
 import agents.Agent;
 import repast.simphony.engine.schedule.ISchedulableAction;
 import repast.simphony.engine.schedule.ISchedule;
+import utils.TimeUtils;
+
 import java.lang.Math;
 
 
@@ -42,7 +44,7 @@ abstract class Process extends Agent{
 	abstract void stop() ;
 
 	double getNextEventTime(){
-		double currTime = schedule.getTickCount();
+		double currTime = TimeUtils.getSchedule().getTickCount();
 		double elapse = distro.sample();
 		return Math.max(currTime+elapse,0);
 	}

@@ -13,7 +13,7 @@ public class Admission extends Process{
     ScheduleParameters schedParams;
     double nextEventTime;
     ISchedulableAction nextAction;
-    static int totalAdmissionsAttempted;
+    public int totalAdmissionsAttempted;
     double meanObservedIntraEventTime;
 
 
