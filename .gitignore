@@ -34,3 +34,4 @@ debug.log
 debug.log ssh_remote_model.log velocity.log
 ssh_remote_model.log
 R/.Rhistory
+.claude
