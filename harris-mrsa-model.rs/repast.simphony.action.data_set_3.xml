@@ -1,0 +1,31 @@
+<repast.simphony.data2.engine.DataSetDescriptor simphonyVersion="2.11.0">
+  <name>outputs</name>
+  <type>AGGREGATE</type>
+  <inclTick>true</inclTick>
+  <inclBatchRun>true</inclBatchRun>
+  <inclRandomSeed>false</inclRandomSeed>
+  <scheduleParams>
+    <start>Infinity</start>
+    <interval>0.0</interval>
+    <priority>-Infinity</priority>
+    <pType>LAST</pType>
+    <duration>-1.0</duration>
+    <frequency>ONE_TIME</frequency>
+    <hashCode>1401810029</hashCode>
+  </scheduleParams>
+  <atEnd>false</atEnd>
+  <methodDataSources class="linked-hash-map">
+    <entry>
+      <string>totalInfections</string>
+      <repast.simphony.data2.engine.MethodDataSourceDefinition>
+        <id>totalInfections</id>
+        <className>builders.Builder</className>
+        <methodName>getTotalInfections</methodName>
+        <aggType>SUM</aggType>
+      </repast.simphony.data2.engine.MethodDataSourceDefinition>
+    </entry>
+  </methodDataSources>
+  <countSources class="linked-hash-map"/>
+  <customNADataSources class="linked-hash-map"/>
+  <customAggDataSources class="linked-hash-map"/>
+</repast.simphony.data2.engine.DataSetDescriptor>

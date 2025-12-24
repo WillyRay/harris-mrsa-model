@@ -15,7 +15,6 @@ public class Transfer extends Process{
     double shape,scale;
     double nextEventTime;
     ISchedulableAction nextAction;;
-    static int totalAdmissionsAttempted;
     double meanObservedIntraEventTime;
 
 

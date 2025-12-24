@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Discharged Patients Analysis</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="discharged_patients_analysis_files/libs/clipboard/clipboard.min.js"></script>
+<script src="discharged_patients_analysis_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="discharged_patients_analysis_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="discharged_patients_analysis_files/libs/quarto-html/popper.min.js"></script>
+<script src="discharged_patients_analysis_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="discharged_patients_analysis_files/libs/quarto-html/anchor.min.js"></script>
+<link href="discharged_patients_analysis_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="discharged_patients_analysis_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="discharged_patients_analysis_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="discharged_patients_analysis_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="discharged_patients_analysis_files/libs/bootstrap/bootstrap-bb462d781dde1847d9e3ccf7736099dd.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="discharged_patients_analysis.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Discharged Patients Analysis</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read discharged_patients.txt into a dataframe</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="st">"discharged_patients.txt"</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">sep =</span> <span class="st">","</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert boolean columns from strings to logical</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>icuAdmit <span class="ot">&lt;-</span> <span class="fu">tolower</span>(df<span class="sc">$</span>icuAdmit) <span class="sc">==</span> <span class="st">"true"</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>colonizedOnAdmit <span class="ot">&lt;-</span> <span class="fu">tolower</span>(df<span class="sc">$</span>colonizedOnAdmit) <span class="sc">==</span> <span class="st">"true"</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>infectedOnAdmit <span class="ot">&lt;-</span> <span class="fu">tolower</span>(df<span class="sc">$</span>infectedOnAdmit) <span class="sc">==</span> <span class="st">"true"</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>death <span class="ot">&lt;-</span> <span class="fu">tolower</span>(df<span class="sc">$</span>death) <span class="sc">==</span> <span class="st">"true"</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate derived columns</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>los <span class="ot">&lt;-</span> df<span class="sc">$</span>dischargeTime <span class="sc">-</span> df<span class="sc">$</span>admitTime</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>wasTransferred <span class="ot">&lt;-</span> df<span class="sc">$</span>transferTime <span class="sc">&gt;</span> <span class="dv">0</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>wasColonized <span class="ot">&lt;-</span> df<span class="sc">$</span>colonizedTime <span class="sc">&gt;</span> <span class="dv">0</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>wasInfected <span class="ot">&lt;-</span> df<span class="sc">$</span>infectedTime <span class="sc">&gt;</span> <span class="dv">0</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>colonizedDuringStay <span class="ot">&lt;-</span> df<span class="sc">$</span>wasColonized <span class="sc">&amp;</span> <span class="sc">!</span>df<span class="sc">$</span>colonizedOnAdmit</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>infectedDuringStay <span class="ot">&lt;-</span> df<span class="sc">$</span>wasInfected <span class="sc">&amp;</span> <span class="sc">!</span>df<span class="sc">$</span>infectedOnAdmit</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Time to colonization/infection from admission</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>timeToColonization <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(df<span class="sc">$</span>wasColonized, df<span class="sc">$</span>colonizedTime <span class="sc">-</span> df<span class="sc">$</span>admitTime, <span class="cn">NA</span>)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>timeToInfection <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(df<span class="sc">$</span>wasInfected, df<span class="sc">$</span>infectedTime <span class="sc">-</span> df<span class="sc">$</span>admitTime, <span class="cn">NA</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="summary-statistics" class="level1">
+<h1>Summary Statistics</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>total_patients <span class="ot">&lt;-</span> <span class="fu">nrow</span>(df)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>total_icu_admit <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>icuAdmit)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>total_ward_admit <span class="ot">&lt;-</span> total_patients <span class="sc">-</span> total_icu_admit</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>total_deaths <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>death)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="overall-patient-census" class="level2">
+<h2 class="anchored" data-anchor-id="overall-patient-census">Overall Patient Census</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Total Discharged Patients</td>
+<td>7101</td>
+</tr>
+<tr class="even">
+<td>Admitted to ICU</td>
+<td>603 (8.5%)</td>
+</tr>
+<tr class="odd">
+<td>Admitted to Ward</td>
+<td>6498 (91.5%)</td>
+</tr>
+<tr class="even">
+<td>Total Deaths</td>
+<td>0 (0%)</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+</section>
+<section id="admission-patterns" class="level1">
+<h1>Admission Patterns</h1>
+<section id="icu-vs-ward-admissions" class="level2">
+<h2 class="anchored" data-anchor-id="icu-vs-ward-admissions">ICU vs Ward Admissions</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>admit_counts <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="fu">c</span>(<span class="st">"ICU"</span>, <span class="st">"Ward"</span>),</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">count =</span> <span class="fu">c</span>(total_icu_admit, total_ward_admit)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(admit_counts, <span class="fu">aes</span>(<span class="at">x =</span> <span class="st">""</span>, <span class="at">y =</span> count, <span class="at">fill =</span> type)) <span class="sc">+</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">width =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_polar</span>(<span class="at">theta =</span> <span class="st">"y"</span>) <span class="sc">+</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Admission Location Distribution"</span>, <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">fill =</span> <span class="st">"Location"</span>) <span class="sc">+</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"ICU"</span> <span class="ot">=</span> <span class="st">"#e74c3c"</span>, <span class="st">"Ward"</span> <span class="ot">=</span> <span class="st">"#3498db"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="discharged_patients_analysis_files/figure-html/admit-pie-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="length-of-stay-analysis" class="level1">
+<h1>Length of Stay Analysis</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>icu_patients <span class="ot">&lt;-</span> df[df<span class="sc">$</span>icuAdmit, ]</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>ward_patients <span class="ot">&lt;-</span> df[<span class="sc">!</span>df<span class="sc">$</span>icuAdmit, ]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="los-summary-statistics" class="level2">
+<h2 class="anchored" data-anchor-id="los-summary-statistics">LOS Summary Statistics</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Group</th>
+<th>N</th>
+<th>Mean</th>
+<th>Median</th>
+<th>SD</th>
+<th>Min</th>
+<th>Max</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>All Patients</td>
+<td>7101</td>
+<td>4.31</td>
+<td>2.19</td>
+<td>6.93</td>
+<td>0.02</td>
+<td>146.19</td>
+</tr>
+<tr class="even">
+<td>ICU Admits</td>
+<td>603</td>
+<td>1.61</td>
+<td>1.41</td>
+<td>1</td>
+<td>0.18</td>
+<td>6.68</td>
+</tr>
+<tr class="odd">
+<td>Ward Admits</td>
+<td>6498</td>
+<td>4.56</td>
+<td>2.37</td>
+<td>7.19</td>
+<td>0.02</td>
+<td>146.19</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="los-distribution-by-admission-location" class="level2">
+<h2 class="anchored" data-anchor-id="los-distribution-by-admission-location">LOS Distribution by Admission Location</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>q95 <span class="ot">&lt;-</span> <span class="fu">quantile</span>(df<span class="sc">$</span>los, <span class="fl">0.95</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> los, <span class="at">fill =</span> <span class="fu">ifelse</span>(icuAdmit, <span class="st">"ICU"</span>, <span class="st">"Ward"</span>))) <span class="sc">+</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="fl">0.5</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>, <span class="at">position =</span> <span class="st">"identity"</span>) <span class="sc">+</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="dv">0</span>, q95) <span class="sc">+</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="fu">aes</span>(<span class="at">xintercept =</span> <span class="fu">mean</span>(icu_patients<span class="sc">$</span>los)), <span class="at">color =</span> <span class="st">"#e74c3c"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="fu">aes</span>(<span class="at">xintercept =</span> <span class="fu">mean</span>(ward_patients<span class="sc">$</span>los)), <span class="at">color =</span> <span class="st">"#3498db"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Length of Stay Distribution"</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Dashed lines show means by admission location"</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Length of Stay (days)"</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Count"</span>,</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">fill =</span> <span class="st">"Admit Location"</span>) <span class="sc">+</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"ICU"</span> <span class="ot">=</span> <span class="st">"#e74c3c"</span>, <span class="st">"Ward"</span> <span class="ot">=</span> <span class="st">"#3498db"</span>)) <span class="sc">+</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="discharged_patients_analysis_files/figure-html/los-histogram-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="los-density-plot" class="level2">
+<h2 class="anchored" data-anchor-id="los-density-plot">LOS Density Plot</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> los, <span class="at">fill =</span> <span class="fu">ifelse</span>(icuAdmit, <span class="st">"ICU"</span>, <span class="st">"Ward"</span>))) <span class="sc">+</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlim</span>(<span class="dv">0</span>, q95) <span class="sc">+</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Length of Stay Density"</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Length of Stay (days)"</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Density"</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">fill =</span> <span class="st">"Admit Location"</span>) <span class="sc">+</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"ICU"</span> <span class="ot">=</span> <span class="st">"#e74c3c"</span>, <span class="st">"Ward"</span> <span class="ot">=</span> <span class="st">"#3498db"</span>)) <span class="sc">+</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="discharged_patients_analysis_files/figure-html/los-density-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="transfer-analysis" class="level1">
+<h1>Transfer Analysis</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>total_transfers <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>wasTransferred)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>transfers_icu_to_ward <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>wasTransferred <span class="sc">&amp;</span> df<span class="sc">$</span>admitLocation <span class="sc">==</span> <span class="st">"ICU"</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>transfers_ward_to_icu <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>wasTransferred <span class="sc">&amp;</span> df<span class="sc">$</span>admitLocation <span class="sc">==</span> <span class="st">"Ward"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="transfer-summary" class="level2">
+<h2 class="anchored" data-anchor-id="transfer-summary">Transfer Summary</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Total Transfers</td>
+<td>446 (6.3% of patients)</td>
+</tr>
+<tr class="even">
+<td>ICU to Ward</td>
+<td>446</td>
+</tr>
+<tr class="odd">
+<td>Ward to ICU</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="time-to-transfer-from-admission" class="level2">
+<h2 class="anchored" data-anchor-id="time-to-transfer-from-admission">Time to Transfer (from Admission)</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>transferred_df <span class="ot">&lt;-</span> df[df<span class="sc">$</span>wasTransferred, ]</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">nrow</span>(transferred_df) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  transferred_df<span class="sc">$</span>timeToTransfer <span class="ot">&lt;-</span> transferred_df<span class="sc">$</span>transferTime <span class="sc">-</span> transferred_df<span class="sc">$</span>admitTime</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(transferred_df, <span class="fu">aes</span>(<span class="at">x =</span> timeToTransfer)) <span class="sc">+</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="fl">0.5</span>, <span class="at">fill =</span> <span class="st">"#9b59b6"</span>, <span class="at">color =</span> <span class="st">"black"</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Distribution of Time to Transfer"</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">x =</span> <span class="st">"Days from Admission to Transfer"</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">y =</span> <span class="st">"Count"</span>) <span class="sc">+</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_minimal</span>()</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Mean time to transfer:"</span>, <span class="fu">round</span>(<span class="fu">mean</span>(transferred_df<span class="sc">$</span>timeToTransfer), <span class="dv">2</span>), <span class="st">"days</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Median time to transfer:"</span>, <span class="fu">round</span>(<span class="fu">median</span>(transferred_df<span class="sc">$</span>timeToTransfer), <span class="dv">2</span>), <span class="st">"days</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"No transfers occurred in this simulation run.</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mean time to transfer: 2.36 days
+Median time to transfer: 2.15 days</code></pre>
+</div>
+</div>
+</section>
+<section id="discharge-location-by-admission-location" class="level2">
+<h2 class="anchored" data-anchor-id="discharge-location-by-admission-location">Discharge Location by Admission Location</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>flow_table <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(admitLocation, dischargeLocation) <span class="sc">%&gt;%</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">count =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pct =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> count <span class="sc">/</span> <span class="fu">sum</span>(count), <span class="dv">1</span>))</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(flow_table, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Admit Location"</span>, <span class="st">"Discharge Location"</span>, <span class="st">"Count"</span>, <span class="st">"% of Total"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Admit Location</th>
+<th style="text-align: left;">Discharge Location</th>
+<th style="text-align: right;">Count</th>
+<th style="text-align: right;">% of Total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">ICU</td>
+<td style="text-align: left;">ICU</td>
+<td style="text-align: right;">603</td>
+<td style="text-align: right;">8.5</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ICU</td>
+<td style="text-align: left;">Ward</td>
+<td style="text-align: right;">446</td>
+<td style="text-align: right;">6.3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ward</td>
+<td style="text-align: left;">Ward</td>
+<td style="text-align: right;">6052</td>
+<td style="text-align: right;">85.2</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Simple bar chart showing flow</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> admitLocation, <span class="at">fill =</span> dischargeLocation)) <span class="sc">+</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">position =</span> <span class="st">"fill"</span>) <span class="sc">+</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Discharge Location by Admission Location"</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Admission Location"</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Proportion"</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">fill =</span> <span class="st">"Discharge Location"</span>) <span class="sc">+</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"ICU"</span> <span class="ot">=</span> <span class="st">"#e74c3c"</span>, <span class="st">"Ward"</span> <span class="ot">=</span> <span class="st">"#3498db"</span>)) <span class="sc">+</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="discharged_patients_analysis_files/figure-html/sankey-alt-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="disease-analysis" class="level1">
+<h1>Disease Analysis</h1>
+<section id="colonization-summary" class="level2">
+<h2 class="anchored" data-anchor-id="colonization-summary">Colonization Summary</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>colonized_on_admit <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>colonizedOnAdmit)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>colonized_during_stay <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>colonizedDuringStay)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>total_colonized <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>wasColonized)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>never_colonized <span class="ot">&lt;-</span> total_patients <span class="sc">-</span> total_colonized</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Colonized on Admission</td>
+<td>850 (12%)</td>
+</tr>
+<tr class="even">
+<td>Colonized During Stay</td>
+<td>5514 (77.7%)</td>
+</tr>
+<tr class="odd">
+<td>Total Ever Colonized</td>
+<td>6364 (89.6%)</td>
+</tr>
+<tr class="even">
+<td>Never Colonized</td>
+<td>737 (10.4%)</td>
+</tr>
+</tbody>
+</table>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>colon_counts <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">status =</span> <span class="fu">c</span>(<span class="st">"Colonized on Admit"</span>, <span class="st">"Colonized During Stay"</span>, <span class="st">"Never Colonized"</span>),</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">count =</span> <span class="fu">c</span>(colonized_on_admit, colonized_during_stay, never_colonized)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(colon_counts, <span class="fu">aes</span>(<span class="at">x =</span> <span class="st">""</span>, <span class="at">y =</span> count, <span class="at">fill =</span> status)) <span class="sc">+</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">width =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_polar</span>(<span class="at">theta =</span> <span class="st">"y"</span>) <span class="sc">+</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Colonization Status Distribution"</span>, <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">fill =</span> <span class="st">"Status"</span>) <span class="sc">+</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"Colonized on Admit"</span> <span class="ot">=</span> <span class="st">"#e74c3c"</span>,</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"Colonized During Stay"</span> <span class="ot">=</span> <span class="st">"#f39c12"</span>,</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"Never Colonized"</span> <span class="ot">=</span> <span class="st">"#27ae60"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="discharged_patients_analysis_files/figure-html/colonization-pie-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="infection-summary" class="level2">
+<h2 class="anchored" data-anchor-id="infection-summary">Infection Summary</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>infected_on_admit <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>infectedOnAdmit)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>infected_during_stay <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>infectedDuringStay)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>total_infected <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>wasInfected)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>never_infected <span class="ot">&lt;-</span> total_patients <span class="sc">-</span> total_infected</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Infected on Admission</td>
+<td>117 (1.6%)</td>
+</tr>
+<tr class="even">
+<td>Infected During Stay</td>
+<td>1503 (21.2%)</td>
+</tr>
+<tr class="odd">
+<td>Total Ever Infected</td>
+<td>1620 (22.8%)</td>
+</tr>
+<tr class="even">
+<td>Never Infected</td>
+<td>5481 (77.2%)</td>
+</tr>
+</tbody>
+</table>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>infect_counts <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">status =</span> <span class="fu">c</span>(<span class="st">"Infected on Admit"</span>, <span class="st">"Infected During Stay"</span>, <span class="st">"Never Infected"</span>),</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">count =</span> <span class="fu">c</span>(infected_on_admit, infected_during_stay, never_infected)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(infect_counts, <span class="fu">aes</span>(<span class="at">x =</span> <span class="st">""</span>, <span class="at">y =</span> count, <span class="at">fill =</span> status)) <span class="sc">+</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">width =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_polar</span>(<span class="at">theta =</span> <span class="st">"y"</span>) <span class="sc">+</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Infection Status Distribution"</span>, <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">fill =</span> <span class="st">"Status"</span>) <span class="sc">+</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"Infected on Admit"</span> <span class="ot">=</span> <span class="st">"#c0392b"</span>,</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"Infected During Stay"</span> <span class="ot">=</span> <span class="st">"#e67e22"</span>,</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"Never Infected"</span> <span class="ot">=</span> <span class="st">"#2ecc71"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="discharged_patients_analysis_files/figure-html/infection-pie-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="time-to-colonization-hospital-acquired" class="level2">
+<h2 class="anchored" data-anchor-id="time-to-colonization-hospital-acquired">Time to Colonization (Hospital-Acquired)</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>ha_colonized <span class="ot">&lt;-</span> df[df<span class="sc">$</span>colonizedDuringStay, ]</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">nrow</span>(ha_colonized) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(ha_colonized, <span class="fu">aes</span>(<span class="at">x =</span> timeToColonization)) <span class="sc">+</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">1</span>, <span class="at">fill =</span> <span class="st">"#f39c12"</span>, <span class="at">color =</span> <span class="st">"black"</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Time to Hospital-Acquired Colonization"</span>,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">x =</span> <span class="st">"Days from Admission to Colonization"</span>,</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">y =</span> <span class="st">"Count"</span>) <span class="sc">+</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_minimal</span>()</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Mean time to colonization:"</span>, <span class="fu">round</span>(<span class="fu">mean</span>(ha_colonized<span class="sc">$</span>timeToColonization), <span class="dv">2</span>), <span class="st">"days</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Median time to colonization:"</span>, <span class="fu">round</span>(<span class="fu">median</span>(ha_colonized<span class="sc">$</span>timeToColonization), <span class="dv">2</span>), <span class="st">"days</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"No hospital-acquired colonizations occurred in this simulation run.</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mean time to colonization: 0.45 days
+Median time to colonization: 0.34 days</code></pre>
+</div>
+</div>
+</section>
+<section id="time-to-infection-for-those-who-progressed" class="level2">
+<h2 class="anchored" data-anchor-id="time-to-infection-for-those-who-progressed">Time to Infection (for those who progressed)</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>ha_infected <span class="ot">&lt;-</span> df[df<span class="sc">$</span>infectedDuringStay, ]</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">nrow</span>(ha_infected) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(ha_infected, <span class="fu">aes</span>(<span class="at">x =</span> timeToInfection)) <span class="sc">+</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">1</span>, <span class="at">fill =</span> <span class="st">"#e67e22"</span>, <span class="at">color =</span> <span class="st">"black"</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Time to Infection (Hospital-Acquired)"</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">x =</span> <span class="st">"Days from Admission to Infection"</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">y =</span> <span class="st">"Count"</span>) <span class="sc">+</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_minimal</span>()</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Mean time to infection:"</span>, <span class="fu">round</span>(<span class="fu">mean</span>(ha_infected<span class="sc">$</span>timeToInfection), <span class="dv">2</span>), <span class="st">"days</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Median time to infection:"</span>, <span class="fu">round</span>(<span class="fu">median</span>(ha_infected<span class="sc">$</span>timeToInfection), <span class="dv">2</span>), <span class="st">"days</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"No hospital-acquired infections occurred in this simulation run.</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mean time to infection: 4.39 days
+Median time to infection: 3.58 days</code></pre>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="disease-by-location" class="level1">
+<h1>Disease by Location</h1>
+<section id="colonization-by-admission-location" class="level2">
+<h2 class="anchored" data-anchor-id="colonization-by-admission-location">Colonization by Admission Location</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>colon_by_loc <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(admitLocation) <span class="sc">%&gt;%</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">colonized_admit =</span> <span class="fu">sum</span>(colonizedOnAdmit),</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">colonized_stay =</span> <span class="fu">sum</span>(colonizedDuringStay),</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_colonized =</span> <span class="fu">sum</span>(wasColonized),</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">pct_colonized =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">sum</span>(wasColonized) <span class="sc">/</span> <span class="fu">n</span>(), <span class="dv">1</span>),</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(colon_by_loc,</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Admit Location"</span>, <span class="st">"N"</span>, <span class="st">"Colonized on Admit"</span>,</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Colonized During Stay"</span>, <span class="st">"Total Colonized"</span>, <span class="st">"% Colonized"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 5%">
+<col style="width: 21%">
+<col style="width: 24%">
+<col style="width: 17%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Admit Location</th>
+<th style="text-align: right;">N</th>
+<th style="text-align: right;">Colonized on Admit</th>
+<th style="text-align: right;">Colonized During Stay</th>
+<th style="text-align: right;">Total Colonized</th>
+<th style="text-align: right;">% Colonized</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">ICU</td>
+<td style="text-align: right;">1049</td>
+<td style="text-align: right;">132</td>
+<td style="text-align: right;">905</td>
+<td style="text-align: right;">1037</td>
+<td style="text-align: right;">98.9</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ward</td>
+<td style="text-align: right;">6052</td>
+<td style="text-align: right;">718</td>
+<td style="text-align: right;">4609</td>
+<td style="text-align: right;">5327</td>
+<td style="text-align: right;">88.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="infection-by-admission-location" class="level2">
+<h2 class="anchored" data-anchor-id="infection-by-admission-location">Infection by Admission Location</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>infect_by_loc <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(admitLocation) <span class="sc">%&gt;%</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">infected_admit =</span> <span class="fu">sum</span>(infectedOnAdmit),</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">infected_stay =</span> <span class="fu">sum</span>(infectedDuringStay),</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_infected =</span> <span class="fu">sum</span>(wasInfected),</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">pct_infected =</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">sum</span>(wasInfected) <span class="sc">/</span> <span class="fu">n</span>(), <span class="dv">1</span>),</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(infect_by_loc,</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Admit Location"</span>, <span class="st">"N"</span>, <span class="st">"Infected on Admit"</span>,</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Infected During Stay"</span>, <span class="st">"Total Infected"</span>, <span class="st">"% Infected"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 5%">
+<col style="width: 21%">
+<col style="width: 24%">
+<col style="width: 17%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Admit Location</th>
+<th style="text-align: right;">N</th>
+<th style="text-align: right;">Infected on Admit</th>
+<th style="text-align: right;">Infected During Stay</th>
+<th style="text-align: right;">Total Infected</th>
+<th style="text-align: right;">% Infected</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">ICU</td>
+<td style="text-align: right;">1049</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">272</td>
+<td style="text-align: right;">292</td>
+<td style="text-align: right;">27.8</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ward</td>
+<td style="text-align: right;">6052</td>
+<td style="text-align: right;">97</td>
+<td style="text-align: right;">1231</td>
+<td style="text-align: right;">1328</td>
+<td style="text-align: right;">21.9</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="los-by-disease-status" class="level1">
+<h1>LOS by Disease Status</h1>
+<section id="los-colonized-vs-non-colonized" class="level2">
+<h2 class="anchored" data-anchor-id="los-colonized-vs-non-colonized">LOS: Colonized vs Non-Colonized</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>colonized_df <span class="ot">&lt;-</span> df[df<span class="sc">$</span>wasColonized, ]</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>noncolonized_df <span class="ot">&lt;-</span> df[<span class="sc">!</span>df<span class="sc">$</span>wasColonized, ]</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">nrow</span>(colonized_df) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;&amp;</span> <span class="fu">nrow</span>(noncolonized_df) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  los_comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">Group =</span> <span class="fu">c</span>(<span class="st">"Colonized"</span>, <span class="st">"Not Colonized"</span>),</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">N =</span> <span class="fu">c</span>(<span class="fu">nrow</span>(colonized_df), <span class="fu">nrow</span>(noncolonized_df)),</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">Mean_LOS =</span> <span class="fu">c</span>(<span class="fu">mean</span>(colonized_df<span class="sc">$</span>los), <span class="fu">mean</span>(noncolonized_df<span class="sc">$</span>los)),</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">Median_LOS =</span> <span class="fu">c</span>(<span class="fu">median</span>(colonized_df<span class="sc">$</span>los), <span class="fu">median</span>(noncolonized_df<span class="sc">$</span>los)),</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">SD_LOS =</span> <span class="fu">c</span>(<span class="fu">sd</span>(colonized_df<span class="sc">$</span>los), <span class="fu">sd</span>(noncolonized_df<span class="sc">$</span>los))</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>(los_comparison, <span class="at">digits =</span> <span class="dv">2</span>)</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> wasColonized, <span class="at">y =</span> los, <span class="at">fill =</span> wasColonized)) <span class="sc">+</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Length of Stay by Colonization Status"</span>,</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">x =</span> <span class="st">"Was Colonized"</span>,</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>         <span class="at">y =</span> <span class="st">"Length of Stay (days)"</span>) <span class="sc">+</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"FALSE"</span> <span class="ot">=</span> <span class="st">"#27ae60"</span>, <span class="st">"TRUE"</span> <span class="ot">=</span> <span class="st">"#e74c3c"</span>)) <span class="sc">+</span></span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="discharged_patients_analysis_files/figure-html/los-by-colonization-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="los-infected-vs-non-infected" class="level2">
+<h2 class="anchored" data-anchor-id="los-infected-vs-non-infected">LOS: Infected vs Non-Infected</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>infected_df <span class="ot">&lt;-</span> df[df<span class="sc">$</span>wasInfected, ]</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>noninfected_df <span class="ot">&lt;-</span> df[<span class="sc">!</span>df<span class="sc">$</span>wasInfected, ]</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">nrow</span>(infected_df) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;&amp;</span> <span class="fu">nrow</span>(noninfected_df) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  los_comparison_inf <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">Group =</span> <span class="fu">c</span>(<span class="st">"Infected"</span>, <span class="st">"Not Infected"</span>),</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">N =</span> <span class="fu">c</span>(<span class="fu">nrow</span>(infected_df), <span class="fu">nrow</span>(noninfected_df)),</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">Mean_LOS =</span> <span class="fu">c</span>(<span class="fu">mean</span>(infected_df<span class="sc">$</span>los), <span class="fu">mean</span>(noninfected_df<span class="sc">$</span>los)),</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">Median_LOS =</span> <span class="fu">c</span>(<span class="fu">median</span>(infected_df<span class="sc">$</span>los), <span class="fu">median</span>(noninfected_df<span class="sc">$</span>los)),</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">SD_LOS =</span> <span class="fu">c</span>(<span class="fu">sd</span>(infected_df<span class="sc">$</span>los), <span class="fu">sd</span>(noninfected_df<span class="sc">$</span>los))</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>(los_comparison_inf, <span class="at">digits =</span> <span class="dv">2</span>)</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> wasInfected, <span class="at">y =</span> los, <span class="at">fill =</span> wasInfected)) <span class="sc">+</span></span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Length of Stay by Infection Status"</span>,</span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">x =</span> <span class="st">"Was Infected"</span>,</span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>         <span class="at">y =</span> <span class="st">"Length of Stay (days)"</span>) <span class="sc">+</span></span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"FALSE"</span> <span class="ot">=</span> <span class="st">"#2ecc71"</span>, <span class="st">"TRUE"</span> <span class="ot">=</span> <span class="st">"#c0392b"</span>)) <span class="sc">+</span></span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="discharged_patients_analysis_files/figure-html/los-by-infection-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="temporal-patterns" class="level1">
+<h1>Temporal Patterns</h1>
+<section id="admissions-over-time" class="level2">
+<h2 class="anchored" data-anchor-id="admissions-over-time">Admissions Over Time</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>admitDay <span class="ot">&lt;-</span> <span class="fu">floor</span>(df<span class="sc">$</span>admitTime)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>admissions_by_day <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(admitDay) <span class="sc">%&gt;%</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">count =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(admissions_by_day, <span class="fu">aes</span>(<span class="at">x =</span> admitDay, <span class="at">y =</span> count)) <span class="sc">+</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"#3498db"</span>) <span class="sc">+</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"loess"</span>, <span class="at">se =</span> <span class="cn">TRUE</span>, <span class="at">color =</span> <span class="st">"#e74c3c"</span>, <span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Daily Admissions Over Simulation"</span>,</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Day"</span>,</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Number of Admissions"</span>) <span class="sc">+</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="discharged_patients_analysis_files/figure-html/admissions-over-time-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="discharges-over-time" class="level2">
+<h2 class="anchored" data-anchor-id="discharges-over-time">Discharges Over Time</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>dischargeDay <span class="ot">&lt;-</span> <span class="fu">floor</span>(df<span class="sc">$</span>dischargeTime)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>discharges_by_day <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(dischargeDay) <span class="sc">%&gt;%</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">count =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(discharges_by_day, <span class="fu">aes</span>(<span class="at">x =</span> dischargeDay, <span class="at">y =</span> count)) <span class="sc">+</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"#9b59b6"</span>) <span class="sc">+</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"loess"</span>, <span class="at">se =</span> <span class="cn">TRUE</span>, <span class="at">color =</span> <span class="st">"#e74c3c"</span>, <span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Daily Discharges Over Simulation"</span>,</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Day"</span>,</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Number of Discharges"</span>) <span class="sc">+</span></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="discharged_patients_analysis_files/figure-html/discharges-over-time-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="colonization-events-over-time" class="level2">
+<h2 class="anchored" data-anchor-id="colonization-events-over-time">Colonization Events Over Time</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>colonization_events <span class="ot">&lt;-</span> df[df<span class="sc">$</span>wasColonized, ]</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">nrow</span>(colonization_events) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  colonization_events<span class="sc">$</span>colonizationDay <span class="ot">&lt;-</span> <span class="fu">floor</span>(colonization_events<span class="sc">$</span>colonizedTime)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  colon_by_day <span class="ot">&lt;-</span> colonization_events <span class="sc">%&gt;%</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(colonizationDay) <span class="sc">%&gt;%</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">count =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(colon_by_day, <span class="fu">aes</span>(<span class="at">x =</span> colonizationDay, <span class="at">y =</span> count)) <span class="sc">+</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">fill =</span> <span class="st">"#f39c12"</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Colonization Events Over Time"</span>,</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">x =</span> <span class="st">"Day"</span>,</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">y =</span> <span class="st">"Number of Colonizations"</span>) <span class="sc">+</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_minimal</span>()</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="discharged_patients_analysis_files/figure-html/colonization-over-time-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="full-data-summary" class="level1">
+<h1>Full Data Summary</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"=== SIMULATION SUMMARY ===</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>=== SIMULATION SUMMARY ===</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Total Patients:"</span>, total_patients, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total Patients: 7101 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Simulation Duration:"</span>, <span class="fu">max</span>(df<span class="sc">$</span>dischargeTime), <span class="st">"days</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simulation Duration: 364.9873 days</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"--- ADMISSIONS ---</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>--- ADMISSIONS ---</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"ICU Admits:"</span>, total_icu_admit, <span class="st">"("</span>, <span class="fu">round</span>(<span class="dv">100</span><span class="sc">*</span>total_icu_admit<span class="sc">/</span>total_patients, <span class="dv">1</span>), <span class="st">"%)</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ICU Admits: 603 ( 8.5 %)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Ward Admits:"</span>, total_ward_admit, <span class="st">"("</span>, <span class="fu">round</span>(<span class="dv">100</span><span class="sc">*</span>total_ward_admit<span class="sc">/</span>total_patients, <span class="dv">1</span>), <span class="st">"%)</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Ward Admits: 6498 ( 91.5 %)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"--- LENGTH OF STAY ---</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>--- LENGTH OF STAY ---</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Overall Mean LOS:"</span>, <span class="fu">round</span>(<span class="fu">mean</span>(df<span class="sc">$</span>los), <span class="dv">2</span>), <span class="st">"days</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Overall Mean LOS: 4.31 days</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"ICU Admit Mean LOS:"</span>, <span class="fu">round</span>(<span class="fu">mean</span>(icu_patients<span class="sc">$</span>los), <span class="dv">2</span>), <span class="st">"days</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ICU Admit Mean LOS: 1.61 days</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Ward Admit Mean LOS:"</span>, <span class="fu">round</span>(<span class="fu">mean</span>(ward_patients<span class="sc">$</span>los), <span class="dv">2</span>), <span class="st">"days</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Ward Admit Mean LOS: 4.56 days</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"--- TRANSFERS ---</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>--- TRANSFERS ---</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Total Transfers:"</span>, total_transfers, <span class="st">"("</span>, <span class="fu">round</span>(<span class="dv">100</span><span class="sc">*</span>total_transfers<span class="sc">/</span>total_patients, <span class="dv">1</span>), <span class="st">"%)</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total Transfers: 446 ( 6.3 %)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"--- COLONIZATION ---</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>--- COLONIZATION ---</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Colonized on Admission:"</span>, colonized_on_admit, <span class="st">"("</span>, <span class="fu">round</span>(<span class="dv">100</span><span class="sc">*</span>colonized_on_admit<span class="sc">/</span>total_patients, <span class="dv">1</span>), <span class="st">"%)</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Colonized on Admission: 850 ( 12 %)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Hospital-Acquired Colonization:"</span>, colonized_during_stay, <span class="st">"("</span>, <span class="fu">round</span>(<span class="dv">100</span><span class="sc">*</span>colonized_during_stay<span class="sc">/</span>total_patients, <span class="dv">1</span>), <span class="st">"%)</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Hospital-Acquired Colonization: 5514 ( 77.7 %)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Total Colonized:"</span>, total_colonized, <span class="st">"("</span>, <span class="fu">round</span>(<span class="dv">100</span><span class="sc">*</span>total_colonized<span class="sc">/</span>total_patients, <span class="dv">1</span>), <span class="st">"%)</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total Colonized: 6364 ( 89.6 %)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"--- INFECTION ---</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>--- INFECTION ---</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Infected on Admission:"</span>, infected_on_admit, <span class="st">"("</span>, <span class="fu">round</span>(<span class="dv">100</span><span class="sc">*</span>infected_on_admit<span class="sc">/</span>total_patients, <span class="dv">1</span>), <span class="st">"%)</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Infected on Admission: 117 ( 1.6 %)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Hospital-Acquired Infection:"</span>, infected_during_stay, <span class="st">"("</span>, <span class="fu">round</span>(<span class="dv">100</span><span class="sc">*</span>infected_during_stay<span class="sc">/</span>total_patients, <span class="dv">1</span>), <span class="st">"%)</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Hospital-Acquired Infection: 1503 ( 21.2 %)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Total Infected:"</span>, total_infected, <span class="st">"("</span>, <span class="fu">round</span>(<span class="dv">100</span><span class="sc">*</span>total_infected<span class="sc">/</span>total_patients, <span class="dv">1</span>), <span class="st">"%)</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total Infected: 1620 ( 22.8 %)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"--- MORTALITY ---</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>--- MORTALITY ---</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Total Deaths:"</span>, total_deaths, <span class="st">"("</span>, <span class="fu">round</span>(<span class="dv">100</span><span class="sc">*</span>total_deaths<span class="sc">/</span>total_patients, <span class="dv">1</span>), <span class="st">"%)</span><span class="sc">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total Deaths: 0 ( 0 %)</code></pre>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

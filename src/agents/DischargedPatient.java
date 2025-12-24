@@ -6,25 +6,33 @@ public class DischargedPatient extends Agent {
     private boolean imported, icu;
     private int agentId;
     private String dischargeLocation, admitLocation;
+    private double colonizedTime, infectedTime;
+    private boolean colonizedOnAdmission, infectedOnAdmission,death;
     
     
     
     
     
-    public DischargedPatient(int agentId, double admitTime, double dischargeTime, boolean imported, boolean icu, double d, String admitLocation, String dischargeLocation) {
+    
+    public DischargedPatient(double admitTime, double dischargeTime, double transferTime, boolean imported, boolean icu,
+	    int agentId, String dischargeLocation, String admitLocation, double colonizedTime, double infectedTime,
+	    boolean colonizedOnAdmission, boolean infectedOnAdmission, boolean death) {
 	super();
-	this.agentId = agentId;
 	this.admitTime = admitTime;
 	this.dischargeTime = dischargeTime;
+	this.transferTime = transferTime;
 	this.imported = imported;
 	this.icu = icu;
-	this.transferTime = d;
-	if (transferTime <= 0)
-	    this.transferTime = -1;
-	this.admitLocation = admitLocation;
+	this.agentId = agentId;
 	this.dischargeLocation = dischargeLocation;
+	this.admitLocation = admitLocation;
+	this.colonizedTime = colonizedTime;
+	this.infectedTime = infectedTime;
+	this.colonizedOnAdmission = colonizedOnAdmission;
+	this.infectedOnAdmission = infectedOnAdmission;
+	this.death = death;
     }
-    
+
     
     //getter  agentId
     
@@ -64,7 +72,8 @@ public class DischargedPatient extends Agent {
     @Override
     public String toString() {
 	return "" + agentId + "," + admitTime + "," + dischargeTime + ","
-		+ icu + "," + transferTime + "," + admitLocation + "," + dischargeLocation;
+		+ icu + "," + transferTime + "," + admitLocation + "," + dischargeLocation + ","
+		+ colonizedOnAdmission + "," + colonizedTime + "," + infectedOnAdmission + "," + infectedTime + "," + death;
     }
 
     public double getTransferTime() {

@@ -12,13 +12,14 @@ import repast.simphony.engine.schedule.ScheduleParameters;
 import utils.TimeUtils;
 
 public class PatientVisit extends Process{
-    Hospital target;
+    private Hospital target;
     ScheduleParameters schedParams;
     double nextEventTime;
     ISchedulableAction nextAction;
     HealthCareWorker hcw;
     double meanObservedIntraEventTime;
     HcwType hcwType;
+    
  
 
 
@@ -66,6 +67,10 @@ public class PatientVisit extends Process{
 	    System.out.println(value) ;
 	}
 	System.out.println(totalVal/1000);
+    }
+
+    public Hospital getTarget() {
+        return target;
     }
     
 }

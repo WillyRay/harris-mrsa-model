@@ -1,0 +1,13 @@
+<repast.simphony.data2.engine.FileSinkDescriptor simphonyVersion="2.11.0">
+  <name>outputs</name>
+  <dataSet>outputs</dataSet>
+  <delimiter>,</delimiter>
+  <format>TABULAR</format>
+  <sourceIds class="linked-hash-set">
+    <string>tick</string>
+    <string>totalInfections</string>
+    <string>run</string>
+  </sourceIds>
+  <fileName>ModelOutput.txt</fileName>
+  <addTimeStamp>true</addTimeStamp>
+</repast.simphony.data2.engine.FileSinkDescriptor>
