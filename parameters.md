@@ -6,12 +6,15 @@ format:
 
 # MRSA ABM Model Parameters
 
+*Last updated: December 23, 2025*
+
 This document describes all model parameters defined in the simulation. Parameters are organized by functional category.
 
 Sources (branch 'next'):
 - Defaults / editable parameters: https://github.com/WillyRay/harris-mrsa-model/blob/next/harris-mrsa-model.rs/parameters.xml
 - Runtime setup and usage: https://github.com/WillyRay/harris-mrsa-model/blob/next/src/builders/Builder.java
 - Visit / transmission logic: https://github.com/WillyRay/harris-mrsa-model/blob/next/src/agents/HealthCareWorker.java
+- Disease progression: https://github.com/WillyRay/harris-mrsa-model/blob/next/src/processes/Progression.java
 
 Notation: Parameters marked with * are configurable via parameters.xml.
 
@@ -121,15 +124,42 @@ Parameters governing MRSA transmission dynamics during HCW–patient visits.
 
 ## Disease Importation and Mortality
 
+### Importation on Admission
+
+The model now uses a probability distribution to determine patient disease status on admission (implemented in `Hospital.createAndAdmitPatient()`):
+
+| Status | Probability | Description |
+|--------|-------------|-------------|
+| Susceptible ("U") | 88% | Patient admitted with no MRSA colonization |
+| Colonized ("C") | 10% | Patient admitted with MRSA colonization |
+| Infected ("I") | 2% | Patient admitted with active MRSA infection |
+
+**Note:** The legacy parameters below are still defined but the actual importation logic uses the probability distribution above.
+
 | Parameter | Value | Usage |
 |-----------|-------|-------|
-| `admitImportationInfectionProbability` | <br>0.01 | Probability that newly admitted ward patient is colonized with MRSA |
-| `admitImportationInfectionProbabilityICU` | <br>0.01 | Probability that newly admitted ICU patient is colonized with MRSA (inherits from ward value) |
-| `importerDieProbability` | <br>0.1 | Mortality probability for colonized ward patients |
-| `importerDiePrombabilityicu` | <br>0.1 | Mortality probability for colonized ICU patients (inherits from ward value, note typo in variable name) |
+| `admitImportationInfectionProbability` | <br>0.01 | (Legacy) Probability for ward patient colonization |
+| `admitImportationInfectionProbabilityICU` | <br>0.01 | (Legacy) Probability for ICU patient colonization |
+| `importerDieProbability` | <br>0.1 | Mortality probability for colonized ward patients (not yet implemented) |
+| `importerDiePrombabilityicu` | <br>0.1 | Mortality probability for colonized ICU patients (not yet implemented) |
+
+## Disease Progression Parameters
+
+Parameters controlling the progression from COLONIZED to INFECTED state (implemented in `Progression.java` and `AgentDisease.java`).
+
+| Parameter | Value | Usage |
+|-----------|-------|-------|
+| ICU progression shape | 1.5 | Shape parameter for Gamma distribution of time to progression (ICU patients) |
+| ICU progression scale | 5.6 | Scale parameter for Gamma distribution of time to progression (ICU patients, days) |
+| Ward progression shape | 1.5 | Shape parameter for Gamma distribution of time to progression (Ward patients) |
+| Ward progression scale | 8.0 | Scale parameter for Gamma distribution of time to progression (Ward patients, days) |
+
+**Note:** These parameters are currently hardcoded in `AgentDisease.setColonizedBy()`. ICU patients progress faster on average (~8.4 days) compared to Ward patients (~12 days).
 
 ## Parameter Status Summary
 
-- **Parameters with specific values**: ADT parameters (admission rates, LOS distributions, transfer probabilities), HCW visit timing, staffing ratios for ICU and ward doctors/nurses
-- **Parameters using placeholder values**: Therapy needs probabilities, transmission probabilities, hand hygiene/PPE adherence rates, disease importation/mortality rates, ward therapist staffing ratios
+- **Parameters with specific values**: ADT parameters (admission rates, LOS distributions, transfer probabilities), HCW visit timing, staffing ratios for ICU and ward doctors/nurses, disease importation probabilities (88%/10%/2%)
+- **Parameters using placeholder values**: Therapy needs probabilities, transmission probabilities, hand hygiene/PPE adherence rates, mortality rates, ward therapist staffing ratios
+- **Hardcoded parameters**: Disease progression timing (Gamma distributions for C→I progression) - currently in `AgentDisease.java`
+- **Not yet implemented**: Mortality (Death.java is a stub), I→R recovery transition
 - **Note**: Any parameter set to `defaultDouble` (0.1) or `defaultInt` (1) or round placeholder values (0.5, 1.0) should be considered as using placeholder values that may need adjustment based on data or literature

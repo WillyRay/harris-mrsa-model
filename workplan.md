@@ -44,16 +44,21 @@ Goals:
 
 Tasks:
 
-- Implement transitions from C->I, I->R
-  - Require time-to-event parameters.
+- [x] Implement transition from C->I (colonized to infected)
+  - Added `Progression.java` with Gamma-distributed time-to-event
+  - ICU: Gamma(1.5, 5.6), Ward: Gamma(1.5, 8.0)
+- [ ] Implement transition from I->R (infected to recovered) - **deferred**
+- [x] Update importation model to use probability distribution (88% S, 10% C, 2% I)
 
 Deliverables:
 
-- Disease data file contains importations, transmissions, progressions.
+- [x] Disease data file contains importations, transmissions, progressions.
+- [x] transmission_data.txt captures all HCW→patient transmission events
 
 Notes:
 
-- This will represent feature-completion on the model.
+- C→I progression implemented and tested
+- I→R transition deferred to January
 
 ---
 
@@ -62,21 +67,32 @@ Notes:
 Goals:
 
 - Calibrate Visit Rates
-- Create documentation website 
+- Create documentation website
+- Fix DischargedPatient field population
 
 Tasks:
 
-- Adjust HCW-specific intra-visit rates to match observed frequencies in HCW Room Visit Frequencies.docx in Box folder.
+- [ ] Adjust HCW-specific intra-visit rates to match observed frequencies in HCW Room Visit Frequencies.docx in Box folder.
+- [x] Fix DischargedPatient field population for disease tracking:
+  - Added `dischargeLocation` - set before discharge
+  - Added `colonizedOnAdmission` / `colonizedTime` - set during admission or transmission
+  - Added `infectedOnAdmission` / `infectedTime` - set during admission or progression
+  - Fixed `AgentDisease.doProgression()` to record proper infection time
+- [x] Create `R/discharged_patients_analysis.qmd` for comprehensive outcome analysis
+- [x] Update documentation (description.md, parameters.md, workplan.md)
 
 Deliverables:
 
 - Visit rate report already exists.  Just need to get the histograms to match calibration targets.
 - Automatically generated documentation website.
+- [x] discharged_patients.txt now contains complete disease tracking data
+- [x] discharged_patients_analysis.qmd provides analysis of LOS, disease status, transfers
 
 Notes:
 
 - **Q: We're using mean intra-event times in the visit frequencies document.  We're currently implemented as gamma distributions in the model.  Do we need to adjust the shape parameters to match the observed distributions?  Guidance needed**
 - Short Week - Christmas Holiday
+- DischargedPatient now properly tracks all disease-related fields for post-simulation analysis
 
 ---
 
@@ -106,21 +122,26 @@ Notes:
 
 Goals:
 
+- Implement I→R (infected to recovered) transition
+- Implement mortality process
 - Parameter finalization for disease model, visit behavior, all submodels
-- Calibrate disease outcomes.  
+- Calibrate disease outcomes.
   - **Q: What are the calibration targets for disease outcomes? Infections/10000pt days?**
 
 Tasks:
 
-- Calibration process.  Should be one tuning variable, right?
+- [ ] Implement I→R transition (recovery from infection)
+- [ ] Implement Death.java (mortality process)
+- [ ] Calibration process.  Should be one tuning variable, right?
 
 Deliverables:
 
 - Calibration report for disease
+- Complete disease model with S→C→I→R transitions
 
 Notes:
 
--
+- I→R transition was deferred from December
 
 ---
 

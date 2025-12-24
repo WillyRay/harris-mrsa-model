@@ -6,16 +6,24 @@ format:
 
 # Harris MRSA Model - Comprehensive Description
 
-## Recent Updates (as of December 2025)
+## Recent Updates (as of December 23, 2025)
 
-- **Transmission logic updated:** The disease transmission logic has been revised and extended (see Disease Transmission Model section below).
-- **Transmission data collection:** A new transmission data file (`transmission.txt`) is generated, capturing all HCW-to-patient transmission events for detailed analysis.
-- **Documentation improvements:** Various documentation updates and preparations for next-phase development.
-- This documentation reflects the state of the 'next' branch as of December 2025.
+- **Disease progression implemented:** The disease model now includes progression from COLONIZED to INFECTED state using a scheduled Gamma-distributed time-to-event process (see `Progression.java`).
+- **Importation model updated:** Patient admission now uses a probability distribution to determine disease status on admission: 88% susceptible, 10% colonized, 2% infected.
+- **DischargedPatient tracking enhanced:** The `DischargedPatient` record now properly tracks all disease-related fields:
+  - `colonizedOnAdmit` / `colonizedTime` - colonization status and timing
+  - `infectedOnAdmit` / `infectedTime` - infection status and timing
+  - `dischargeLocation` - location at time of discharge
+  - `death` - mortality flag (infrastructure in place, not yet implemented)
+- **Transmission logic updated:** HCW-to-patient transmission events are recorded with proper Patient field updates for post-simulation analysis.
+- **New analysis tools:** Added `R/discharged_patients_analysis.qmd` for comprehensive analysis of patient outcomes including LOS, disease status, transfers, and temporal patterns.
+- **Transmission data collection:** A new transmission data file (`transmission_data.txt`) captures all HCW-to-patient transmission events.
+- This documentation reflects the state of the 'next' branch as of December 23, 2025.
 
 ## Next Steps
-- Add patient->hcw contamination data file
-- finish disease model especially transitions from C to I, I to R
+- Implement I→R (infection to recovery) transition
+- Implement mortality process (Death.java is currently a stub)
+- Calibrate visit rates to match observed frequencies
 
 
 ## Overview
@@ -468,18 +476,29 @@ The model creates four output files:
 
 **Format:** CSV with header
 ```
-agentId,admitTime,dischargeTime,icuAdmit,transferTime,admitLocation,dischargeLocation
+agentId,admitTime,dischargeTime,icuAdmit,transferTime,admitLocation,dischargeLocation,colonizedOnAdmit,colonizedTime,infectedOnAdmit,infectedTime,death
 ```
 
 **Content:**
 - One row per discharged patient
 - `transferTime` is **`0.0`** if patient was never transferred
 - `icuAdmit` indicates if patient was initially admitted to ICU
-- Enables length-of-stay analysis, transfer analysis, ICU vs ward utilization
+- `colonizedOnAdmit` / `colonizedTime` - whether colonized on admission and when colonization occurred
+- `infectedOnAdmit` / `infectedTime` - whether infected on admission and when infection occurred
+- `dischargeLocation` - patient's location (ICU or Ward) at time of discharge
+- `death` - whether patient died (currently always false as mortality not yet implemented)
+- Enables length-of-stay analysis, transfer analysis, ICU vs ward utilization, and disease outcome tracking
 
 **Generation:**
 - Loops through `hospital.getDischargedPatients()` list
 - Calls `DischargedPatient.toString()` for each record
+
+**Analysis:**
+- Use `R/discharged_patients_analysis.qmd` for comprehensive analysis including:
+  - LOS distributions by admission location
+  - Transfer patterns and timing
+  - Colonization and infection rates (on admission vs hospital-acquired)
+  - Temporal patterns of admissions, discharges, and disease events
 
 #### 2. visit_data.txt
 
@@ -584,30 +603,64 @@ All times in minutes, converted to days via `TimeUtils.MINUTE`
 - `ppeAdherenceIfCp` = **`0.5`** (PPE/glove compliance)
 
 
-## Disease Transmission Model (Updated December 2025)
+## Disease Transmission Model (Updated December 23, 2025)
 
-The model includes disease tracking infrastructure and, as of the latest update, the transmission logic has been implemented:
+The model includes a complete disease tracking infrastructure with transmission, progression, and outcome tracking.
 
 ### Disease States (DiseaseStates.java)
-- SUSCEPTIBLE - not colonized or infected
-- COLONIZED - carrying MRSA but asymptomatic
-- INFECTED - active MRSA infection
+- **SUSCEPTIBLE** - not colonized or infected
+- **COLONIZED** - carrying MRSA but asymptomatic
+- **INFECTED** - active MRSA infection
 
-### Current Implementation
-- Patients can be imported with INFECTED state on admission
-- HCWs can be marked as contaminated
-- Visit checking logic exists in HealthCareWorker class
-- **Transmission logic has been updated:**
-   - `checkTransmissionToPatient()` and `checkTransmissionToHcw()` now include improved logic for simulating MRSA transmission events during visits, based on hand hygiene and contamination status.
-   - Transmission events are now recorded in visit data for post-hoc analysis.
+### Disease Importation on Admission
+Patients are assigned a disease state on admission using a probability distribution:
+- **88%** - SUSCEPTIBLE (uncolonized)
+- **10%** - COLONIZED (imported colonization)
+- **2%** - INFECTED (imported infection)
 
+When a patient is admitted with colonization or infection:
+- `AgentDisease.setImported(true)` marks as imported case
+- `Patient.colonizedOnAdmission` / `Patient.infectedOnAdmission` flags are set
+- `Patient.colonizedTime` / `Patient.infectedTime` are recorded
+- Disease progression is initiated for colonized patients
 
-### Data Collection for Transmission Analysis
+### Disease Progression (C → I)
+Colonized patients can progress to infected state via `Progression.java`:
+- Uses Gamma-distributed time-to-event scheduling
+- ICU patients: Gamma(shape=**1.5**, scale=**5.6**) days
+- Ward patients: Gamma(shape=**1.5**, scale=**8.0**) days
+- Upon progression:
+  - Disease state changes to INFECTED
+  - `Patient.infectedTime` is recorded
+  - `Builder.totalInfections` counter is incremented
+
+### HCW-to-Patient Transmission
+During each HCW visit to a patient:
+1. **Pre-visit hand hygiene check** - HCW may decontaminate based on compliance rate
+2. **Transmission check** - If HCW still contaminated and patient susceptible:
+   - Probability: `transmission_probability_hcw_to_patient` (**0.4**)
+   - If successful: patient becomes COLONIZED
+   - `Patient.colonizedTime` is recorded
+   - Disease progression is scheduled
+3. **Transmission event recording** - Events logged to `transmission_data.txt`
+4. **Post-visit hand hygiene check** - HCW may decontaminate
+
+### Patient-to-HCW Contamination
+- If patient is colonized/infected and HCW is clean:
+  - Probability: `transmission_probability_patient_to_hcw` (**0.4**)
+  - If successful: HCW becomes contaminated
+  - Glove use can prevent contamination persistence
+
+### Data Collection for Disease Analysis
 The model records:
-- HCW contamination status at each visit
-- Patient disease state at each visit
-- Visit timing and location
-This allows post-hoc transmission analysis or further model extension.
+- **visit_data.txt**: HCW/patient disease states at each visit
+- **transmission_data.txt**: All HCW→patient transmission events (time, patient, HCW, type, location)
+- **discharged_patients.txt**: Complete disease history for each patient (colonization/infection timing, on-admission status)
+- **admission_data.txt**: Importation status for each admission
+
+### Not Yet Implemented
+- **I → R transition**: Recovery from infection
+- **Mortality**: Death.java is a stub; death field always false
 
 ## Summary of Model Dynamics
 

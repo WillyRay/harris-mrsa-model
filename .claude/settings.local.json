@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(unzip:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
