@@ -94,19 +94,28 @@ public class Hospital extends DefaultContext<Agent> {
 	    Patient p = new Patient();
 	    
 	    	String importChoice = (String) Chooser.choose(Arrays.asList("U","C", "I"), Arrays.asList(0.88, 0.10, 0.02));
-	    	System.out.println("Import choice: " + importChoice);
+	    	//System.out.println("Import choice: " + importChoice);
 	    	if (importChoice.equals("U")) {
-	    	
+
 	    	} else if (importChoice.equals("C")) {
 	    	    p.getAgentDisease().setDiseaseState(processes.disease.DiseaseStates.COLONIZED);
 	    	    p.getAgentDisease().setImported(true);
 	    	    p.getAgentDisease().setDateColonized(TimeUtils.getSchedule().getTickCount());
 	    	    p.getAgentDisease().start();
+	    	    // Set Patient fields for discharge tracking
+	    	    p.setColonizedOnAdmission(true);
+	    	    p.setColonizedTime(TimeUtils.getSchedule().getTickCount());
 	    	} else if (importChoice.equals("I")) {
 	    	    p.getAgentDisease().setDiseaseState(processes.disease.DiseaseStates.INFECTED);
 	    	    p.getAgentDisease().setImported(true);
 	    	    p.getAgentDisease().setDateInfected(TimeUtils.getSchedule().getTickCount());
 	    	    p.getAgentDisease().start();
+	    	    // Set Patient fields for discharge tracking
+	    	    p.setInfectedOnAdmission(true);
+	    	    p.setInfectedTime(TimeUtils.getSchedule().getTickCount());
+	    	    // Infected patients are also colonized
+	    	    p.setColonizedOnAdmission(true);
+	    	    p.setColonizedTime(TimeUtils.getSchedule().getTickCount());
 	    	}
 	    
 	    this.add(p);
@@ -315,17 +324,31 @@ public class Hospital extends DefaultContext<Agent> {
 	double admitTime = p.getAdmitTime();
 	double currTime = TimeUtils.getSchedule().getTickCount();
 
-	
 
-	
+	// Set discharge location before creating DischargedPatient
+	p.setDischargeLocation(p.getCurrentLocation());
+
 	this.remove(p);
 	patients.remove(p);
 	inIcu.remove(p);
 	notInIcu.remove(p);
-	
-	
-    	DischargedPatient dp = new DischargedPatient(p.getAgentId(), p.getAdmitTime(), 
-    			currTime, false, (boolean)p.getAttribute("icuAdmit"), p.getTransferTime(), p.getAdmitLocation(), p.getCurrentLocation());
+
+
+    	DischargedPatient dp = new DischargedPatient(p.getAdmitTime()
+    		, currTime
+    		, p.getTransferTime()
+    		, p.getAgentDisease().isImported()
+    		, p.getCurrentLocation().equals("ICU")
+    		, p.getAgentId()
+    		, p.getDischargeLocation()
+    		, p.getAdmitLocation()
+    		, p.getColonizedTime()
+    		, p.getInfectedTime()
+    		, p.isColonizedOnAdmission()
+    		, p.isInfectedOnAdmission()
+    		, p.isDeath()
+    		);
+    	
 	dischargedPatients.add(dp);
 	this.add(dp);
     }

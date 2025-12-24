@@ -163,7 +163,7 @@ public class Builder implements ContextBuilder<Object> {
 	     
 	     //print out discharged patients to a file
 	     try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter("discharged_patients.txt", false))) {
-	         writer.write("agentId,admitTime,dischargeTime,icuAdmit,transferTime,admitLocation,dischargeLocation");
+	         writer.write("agentId,admitTime,dischargeTime,icuAdmit,transferTime,admitLocation,dischargeLocation,colonizedOnAdmit,colonizedTime,infectedOnAdmit,infectedTime,death");
 	         writer.newLine();
 	         for (DischargedPatient dp : hospital.getDischargedPatients()) {
 	              writer.write(dp.toString());

@@ -87,6 +87,8 @@ public class HealthCareWorker extends Agent {
 		    p.getAgentDisease().setDiseaseState(DiseaseStates.COLONIZED);
 		    p.getAgentDisease().setDateColonized(TimeUtils.getSchedule().getTickCount());
 		    p.getAgentDisease().setColonizedBy(this);
+		    // Set Patient fields for discharge tracking
+		    p.setColonizedTime(TimeUtils.getSchedule().getTickCount());
 		}
 		//"time,patientId,hcwId,hcwType,location
 		hospital.tranmissionData.append(TimeUtils.getSchedule().getTickCount() + "," + p.getAgentId() + "," + this.getAgentId() + "," + this.TYPE.toString() + "," + p.getCurrentLocation() + "\n");

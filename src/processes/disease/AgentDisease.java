@@ -31,11 +31,12 @@ public class AgentDisease {
     public void doProgression() {
 	if (this.diseaseState == DiseaseStates.COLONIZED) {
 	    this.diseaseState = DiseaseStates.INFECTED;
-	    this.dateInfected = 0.0; 
-	   // System.out.println(TimeUtils.getSchedule().getTickCount() +
-	//	    ","	+ patient.toString() + ", PROGRESSION" );
-	    builder.getInstance().totalInfections++;
-	    
+	    this.dateInfected = TimeUtils.getSchedule().getTickCount();
+	   System.out.println(TimeUtils.getSchedule().getTickCount() +
+		    ","	+ patient.toString() + ", PROGRESSION" );
+	    Builder.getInstance().totalInfections++;
+	    // Set Patient field for discharge tracking
+	    patient.setInfectedTime(TimeUtils.getSchedule().getTickCount());
 	}
     }
 
@@ -104,7 +105,7 @@ public class AgentDisease {
            scale = 5.6;
         } else {
             shape = 1.5;
-	    scale = 8;
+	    scale = 8.0;
         }
         this.progressionAction = new Progression(shape, scale, this.patient);
         

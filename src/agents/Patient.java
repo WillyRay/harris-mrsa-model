@@ -5,9 +5,9 @@ import processes.disease.DiseaseStates;
 
 public class Patient extends Agent {
     
-    private double admitTime, dischargeTime, transferTime;
+    private double admitTime, dischargeTime, transferTime, colonizedTime, infectedTime;
     private String admitLocation, dischargeLocation,currentLocation;
-    private boolean needsRt, needsOt, needsPt; 
+    private boolean needsRt, needsOt, needsPt, imported, death, colonizedOnAdmission, infectedOnAdmission; 
     private AgentDisease agentDisease;
     
     public Patient() {
@@ -93,6 +93,58 @@ public class Patient extends Agent {
 
     public AgentDisease getAgentDisease() {
 	return this.agentDisease;
+    }
+
+    public double getColonizedTime() {
+        return colonizedTime;
+    }
+
+    public void setColonizedTime(double colonizedTime) {
+        this.colonizedTime = colonizedTime;
+    }
+
+    public double getInfectedTime() {
+        return infectedTime;
+    }
+
+    public void setInfectedTime(double infectedTime) {
+        this.infectedTime = infectedTime;
+    }
+
+    public boolean isImported() {
+        return imported;
+    }
+
+    public void setImported(boolean imported) {
+        this.imported = imported;
+    }
+
+    public boolean isDeath() {
+        return death;
+    }
+
+    public void setDeath(boolean death) {
+        this.death = death;
+    }
+
+    public void setAgentDisease(AgentDisease agentDisease) {
+        this.agentDisease = agentDisease;
+    }
+
+    public boolean isColonizedOnAdmission() {
+        return colonizedOnAdmission;
+    }
+
+    public void setColonizedOnAdmission(boolean colonizedOnAdmission) {
+        this.colonizedOnAdmission = colonizedOnAdmission;
+    }
+
+    public boolean isInfectedOnAdmission() {
+        return infectedOnAdmission;
+    }
+
+    public void setInfectedOnAdmission(boolean infectedOnAdmission) {
+        this.infectedOnAdmission = infectedOnAdmission;
     }
     
     
