@@ -1,0 +1,2 @@
+"tick","totalInfections","run"
+365.0,0.0,1
