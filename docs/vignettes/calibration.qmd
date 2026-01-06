@@ -1,0 +1,15 @@
+---
+title: "Calibration"
+---
+
+*This vignette is under development.*
+
+## Overview
+
+<!--
+Content to be added:
+- Target data sources and calibration targets
+- Calibration methodology (ABC, likelihood-based, etc.)
+- Parameter estimation workflow
+- Validation against held-out data
+-->

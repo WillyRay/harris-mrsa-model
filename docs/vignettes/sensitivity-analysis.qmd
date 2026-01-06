@@ -1,0 +1,15 @@
+---
+title: "Sensitivity Analysis"
+---
+
+*This vignette is under development.*
+
+## Overview
+
+<!--
+Content to be added:
+- One-at-a-time (OAT) sensitivity analysis
+- Global sensitivity methods (Sobol, Morris)
+- Key parameters to investigate
+- Visualization of parameter effects on outcomes
+-->

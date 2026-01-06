@@ -1,0 +1,68 @@
+---
+title: "Model Documentation"
+---
+
+## Architecture *
+
+The model uses a discrete-event simulation pattern built on Repast Simphony's scheduling system.
+
+### Core Components *
+
+```
+builders/Builder.java     Entry point, parameter configuration, HCW creation
+containers/Hospital.java  Patient/bed management, data collection
+agents/                   Patient, Nurse, Doctor, Therapist classes
+processes/                Admission, Discharge, Transfer, PatientVisit
+```
+
+### Agent Types *
+
+**Patients** move through the hospital via ADT processes. Each patient has:
+
+- Admission time and location (ICU or ward)
+- Scheduled discharge time (Gamma-distributed LOS)
+- MRSA colonization/infection status
+
+**Healthcare Workers** include nurses, physicians, and therapists (RT, PT, OT). HCWs are assigned to either ICU or ward and visit patients stochastically based on Gamma-distributed inter-visit times.
+
+## Patient Flow *
+
+```
+Admission → [ICU or Ward] → Transfer (if ICU) → Discharge
+              ↓                    ↓
+         HCW Visits           HCW Visits
+```
+
+1. **Admission**: Exponential inter-arrival times; patients assigned to ICU with probability `icuAdmitProbability`
+2. **Length of Stay**: Log-normal distributed, parameterized separately for ICU and ward
+3. **Transfer**: ICU patients may transfer to ward based on Gamma-distributed timing
+4. **Discharge**: Patient removed, `DischargedPatient` record created
+
+## Disease Transmission *
+
+MRSA spreads via HCW-mediated contact:
+
+1. **Importation**: Patients may arrive colonized (probability `admitImportationInfectionProbability`)
+2. **Transmission**: During visits, MRSA can transfer:
+   - Colonized patient → HCW hands (if no hand hygiene)
+   - Contaminated HCW → susceptible patient
+3. **Interventions**: Hand hygiene before/after visits and PPE for contact precautions reduce transmission probability
+
+### Transmission Probability *
+
+Per-visit transmission probability depends on:
+
+- Patient colonization status
+- HCW hand contamination status
+- Hand hygiene adherence (pre- and post-visit)
+- PPE adherence if patient on contact precautions
+- Hand hygiene efficacy (`hhEfficacy`)
+
+## Scheduling *
+
+The model uses Repast's `ISchedule` with:
+
+- **Continuous time**: Processes self-schedule using distribution samples
+- **Daily operations** (`@ScheduledMethod(interval=1)`): Reset therapy needs
+- **Per-shift operations** (`interval=0.5`): Reassign nurse-patient assignments
+- **End of run** (`start=365`): Write output files

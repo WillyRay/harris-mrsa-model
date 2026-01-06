@@ -1,0 +1,35 @@
+---
+title: "Harris MRSA Hospital Model"
+---
+
+An agent-based model for simulating MRSA transmission dynamics in a hospital setting, built with Repast Simphony.
+
+## Overview *
+
+This model simulates methicillin-resistant *Staphylococcus aureus* (MRSA) transmission within a single hospital facility. It tracks:
+
+- Patient admissions, transfers, and discharges (ADT)
+- Healthcare worker (HCW) visits and patient contacts
+- MRSA colonization and infection dynamics
+- Intervention effectiveness (hand hygiene, contact precautions)
+
+Time is **continuous** in units of **days**, with a default simulation period of 365 days.
+
+## Key Features *
+
+- **Two-unit hospital**: General ward and ICU with distinct dynamics
+- **Multiple HCW types**: Nurses, physicians, respiratory/physical/occupational therapists
+- **Stochastic processes**: Gamma-distributed length of stay and visit timing
+- **Transmission model**: HCW-mediated pathogen transfer with hand hygiene and PPE interventions
+
+## Quick Links
+
+- [Getting Started](getting-started.qmd) - Installation and running your first simulation
+- [Model Documentation](model.qmd) - Architecture and disease dynamics
+- [Parameters](parameters.qmd) - Complete parameter reference
+
+## Attribution *
+
+**Maintainer:** Willy Ray (william.ray@hsc.utah.edu)
+
+**Support:** CDC Center for Forecasting and Outbreak Analytics

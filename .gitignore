@@ -36,3 +36,7 @@ ssh_remote_model.log
 R/.Rhistory
 ModelOutput.*txt
 .claude
+
+# Quarto rendered output
+docs/_site/
+docs/.quarto/

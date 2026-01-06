@@ -1,0 +1,49 @@
+---
+title: "Getting Started"
+---
+
+## Requirements *
+
+- **Java 11** or higher
+- **Repast Simphony 2.11.0**
+- **Eclipse IDE** (recommended, with Repast plugin)
+- **R + Quarto** (for analysis)
+
+## Installation *
+
+1. Clone the repository
+2. Import as existing project in Eclipse with Repast Simphony installed
+3. Ensure `lib/` dependencies are on the classpath
+
+## Running the Model *
+
+### From Eclipse
+
+1. Right-click project > **Run As** > **Repast Simphony Model**
+2. Click **Initialize** then **Run** in the Repast GUI
+3. Simulation runs for 365 ticks (days) by default
+
+### Batch Runs
+
+Configure batch parameters in `harris-mrsa-model.rs/batch/batch_params.xml` and launch via Repast's batch runner.
+
+## Output Files *
+
+The model generates four output files at simulation end:
+
+| File | Description |
+|------|-------------|
+| `discharged_patients.txt` | Patient-level ADT records with MRSA status |
+| `visit_data.txt` | HCW-patient visit log |
+| `admission_data.txt` | Admission events |
+| `transmission_data.txt` | MRSA transmission events |
+
+## Analyzing Results *
+
+```r
+# From the R/ directory
+quarto render analysis.qmd
+quarto render visits.qmd
+```
+
+This produces PDF reports with ADT statistics, LOS distributions, and HCW visit patterns.

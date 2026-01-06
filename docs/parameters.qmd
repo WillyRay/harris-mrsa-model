@@ -1,0 +1,71 @@
+---
+title: "Parameters"
+---
+
+Parameters are defined in `Builder.java` and can be modified via `harris-mrsa-model.rs/parameters.xml`.
+
+## Hospital Configuration *
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `hospitalCapacity` | 120 | Total beds (ward + ICU) |
+| `icuCapacity` | 20 | ICU beds |
+
+## Admission-Discharge-Transfer *
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `admissionsRate` | 0.05 | Mean inter-arrival time (days) |
+| `icuAdmitProbability` | 0.15 | Probability of direct ICU admission |
+| `dischargeShape` | 1.253 | Ward LOS log-normal shape |
+| `dischargeScale` | 0.768 | Ward LOS log-normal scale |
+| `icuDischargeShape` | 0.916 | ICU LOS log-normal shape |
+| `icuDischargeScale` | 0.820 | ICU LOS log-normal scale |
+| `icuTransferProbability` | 0.1 | Probability of ward→ICU transfer |
+| `icuTransferShape` | 0.5 | Transfer timing Gamma shape |
+| `icuTransferScale` | 1.0 | Transfer timing Gamma scale |
+
+## Staffing Ratios *
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `nursesPerPatient` | 0.2 | Ward nurses per bed |
+| `physiciansPerPatient` | 0.2 | Ward physicians per bed |
+| `icuNursesPerPatient` | 0.5 | ICU nurses per bed |
+| `icuPhysiciansPerPatient` | 0.3 | ICU physicians per bed |
+| `rtsPerPatient` | 0.1 | Respiratory therapists per bed |
+| `ptsPerPatient` | 0.1 | Physical therapists per bed |
+| `otsPerPatient` | 0.1 | Occupational therapists per bed |
+
+## HCW Visit Timing *
+
+Inter-visit times follow Gamma distributions (shape, scale in minutes):
+
+| HCW Type | Location | Shape | Scale |
+|----------|----------|-------|-------|
+| Nurse | Ward | 0.54 | 55.1 |
+| Nurse | ICU | 0.54 | 20.0 |
+| Physician | Ward | 0.52 | 90.7 |
+| Physician | ICU | 0.52 | 35.3 |
+| Specialist | Both | 0.62 | 61.7 |
+
+## Transmission Parameters *
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `admitImportationInfectionProbability` | 0.01 | Probability patient arrives colonized |
+| `cleanPtColonizeddHcwColonizationProb` | 0.4 | P(HCW contaminated \| colonized patient, no HH) |
+| `contaminedPtCleanHcwColonizationProb` | 0.4 | P(patient colonized \| contaminated HCW, no HH) |
+| `hhEfficacy` | - | Hand hygiene efficacy (from params.xml) |
+
+## Hand Hygiene Adherence *
+
+| Parameter | Description |
+|-----------|-------------|
+| `nurseHhAdherence` | Nurse pre-visit HH compliance |
+| `nurseHhAdherencePost` | Nurse post-visit HH compliance |
+| `doctorHhAdherence` | Physician pre-visit HH compliance |
+| `doctorHhAdherencePost` | Physician post-visit HH compliance |
+| `therapistHhAdherence` | Therapist pre-visit HH compliance |
+| `therapistHhAdherencePost` | Therapist post-visit HH compliance |
+| `ppeAdherenceIfCp` | PPE compliance for contact precaution patients |

@@ -1,0 +1,53 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Harris MRSA Hospital Model"
+  navbar:
+    background: primary
+    search: true
+    left:
+      - href: index.qmd
+        text: Home
+      - href: getting-started.qmd
+        text: Getting Started
+      - href: model.qmd
+        text: Model
+      - href: parameters.qmd
+        text: Parameters
+      - text: Vignettes
+        menu:
+          - href: vignettes/sensitivity-analysis.qmd
+            text: Sensitivity Analysis
+          - href: vignettes/calibration.qmd
+            text: Calibration
+
+  sidebar:
+    - title: "Documentation"
+      style: docked
+      contents:
+        - index.qmd
+        - getting-started.qmd
+        - model.qmd
+        - parameters.qmd
+        - section: "Vignettes"
+          contents:
+            - vignettes/sensitivity-analysis.qmd
+            - vignettes/calibration.qmd
+
+  page-footer:
+    center: "Harris MRSA Hospital Model (Repast Simphony)"
+    right:
+      - icon: github
+        href: https://github.com/EpiForeSITE/harris-mrsa-model
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 2
+    code-fold: false
+
+execute:
+  freeze: auto
