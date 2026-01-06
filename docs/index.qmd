@@ -27,9 +27,3 @@ Time is **continuous** in units of **days**, with a default simulation period of
 - [Getting Started](getting-started.qmd) - Installation and running your first simulation
 - [Model Documentation](model.qmd) - Architecture and disease dynamics
 - [Parameters](parameters.qmd) - Complete parameter reference
-
-## Attribution *
-
-**Maintainer:** Willy Ray (william.ray@hsc.utah.edu)
-
-**Support:** CDC Center for Forecasting and Outbreak Analytics
